@@ -669,7 +669,7 @@
     # NSIS 3 n'a plus de LogFile : en mode silencieux, LogSet ecrit sur la sortie
     # standard, que `Setup.exe /S > journal.txt` capture. C'est ce que fait le test
     # d'installation sous wine, et ce que l'on demande dans un rapport distant.
-    LogSet on
+    ; LogSet on
     DetailPrint "Soocial: journal de diagnostic active ($EXEDIR)"
   ${EndUnless}
   ClearErrors
