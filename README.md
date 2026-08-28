@@ -1,92 +1,41 @@
-# Soocial Messenger
+# Soocial
 
-One window for all the web apps you keep open all day.
+One beautiful Windows window for all the web apps you keep open all day.
 
 [![Latest release](https://img.shields.io/github/v/release/Kishore-june/Soocial)](https://github.com/Kishore-june/Soocial/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/Kishore-june/Soocial/total)](https://github.com/Kishore-june/Soocial/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-<a href="https://apps.microsoft.com/detail/9PBW3G2B60J6">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://get.microsoft.com/images/en-us%20light.svg">
-    <img alt="Get it from Microsoft" src="https://get.microsoft.com/images/en-us%20dark.svg" height="48">
-  </picture>
-</a>
+Soocial is a lightweight desktop hub for Windows. Each service (like WhatsApp, Discord, your mail, your calendar) runs in its own isolated session, side by side in a single window, with native notifications and unread counters. 
 
-Soocial is a lightweight desktop hub for Windows. Each service runs in its own
-isolated session, side by side in a single window, with native notifications
-and unread counters.
+Say goodbye to hunting for the right browser tab.
 
-![The Soocial window: services in the sidebar with unread badges, a messaging service and a calendar side by side in split view](docs/hero.png)
+## Why Soocial?
 
-## Why
+**1. End Tab Overload:**
+Your most important apps end up scattered across fifty browser tabs. Soocial pins them in a sidebar. One click (or `Ctrl+1` to `Ctrl+9`), and you are there.
 
-Two problems, one tool.
+**2. Isolated Sessions (Multiple Accounts):**
+A normal browser only keeps one WhatsApp Web session alive at a time. Soocial gives every service its own isolated session! This means three WhatsApp accounts on three different numbers can stay signed in together, right next to two Discord accounts. They never sign each other out.
 
-**Tab overload.** The apps you live in (WhatsApp, Discord, your mail, your
-calendar) end up scattered across fifty browser tabs, and you hunt for the
-right one every time. Soocial pins them in a sidebar. One click, or `Ctrl+1` to
-`Ctrl+9`, and you are there.
+## Key Features
 
-**One account per browser.** A browser only keeps one WhatsApp Web session
-alive at a time. Soocial gives every service its own isolated session, so three
-WhatsApp accounts on three numbers stay signed in together, next to two
-Discord accounts and anything else. They never sign each other out.
+- **Isolated Sessions:** Cookies, storage, and logins never mix.
+- **Native Notifications:** Windows notifications with per-service mute (sound included).
+- **Volume Mixer:** A volume level per service, with a mixer panel and a master level.
+- **Do Not Disturb:** Silence everything for 30 minutes, 1 hour, or until tomorrow morning.
+- **Split View:** View two services side by side or stacked, with a draggable divider.
+- **App Lock:** Secure your apps with a pin code (globally or per-service).
+- **Resource Management:** Per-service sleep to free memory, manual or automatic.
 
-## Features
+## Installation
 
-- Isolated session per service: cookies, storage and logins never mix
-- Native Windows notifications, with per-service mute (sound included)
-- Do not disturb: silence everything for 30 minutes, 1 hour, until tomorrow
-  morning or until you turn it off — unread badges keep counting
-- A volume level per service, with a mixer panel and a master level. Scroll over
-  an icon to adjust it; the sidebar shows which services are turned down
-- Unread badges in the sidebar, on the taskbar icon and on the tray icon
-- A catalogue of popular services with their real logos, plus any custom URL
-- Split view: two services side by side or stacked, with a draggable divider
-- App lock with a code, plus a personal code per service, asked at every opening
-- Drag and drop ordering, keyboard shortcuts, close to tray
-- Per-service sleep to free memory, manual or automatic
-- Spell checking as you type, following the interface language
-- Start with Windows, optionally hidden in the tray
-- Automatic updates through GitHub Releases
-- English, French and Spanish interface
+1. Go to the [Releases page](https://github.com/Kishore-june/Soocial/releases).
+2. Download the latest `Soocial Setup.exe`.
+3. Run the installer. On the first launch, pick your language (English, French, or Spanish) and the services you want to use.
 
-## Install
+*(Note: Uninstalling safely removes the folder, shortcuts, and registry entries without touching your personal files).*
 
-1. Download the latest `Soocial Setup x.y.z.exe` from the
-   [Releases page](https://github.com/Kishore-june/Soocial/releases).
-2. Run it. Windows SmartScreen will warn about an unknown publisher because
-   the installer is not code signed: choose "More info", then "Run anyway".
-3. On first launch, pick your language and the services you use. Everything
-   can be changed later.
-
-### Where it goes
-
-The installer offers a location on its first page. Default is
-`C:\Program Files\Soocial`. "Advanced" asks for a **parent** folder -
-`D:\Apps` - and Soocial is installed into `D:\Apps\Soocial`, with its own
-shortcuts, its own registry entry and its own uninstaller. Your accounts,
-settings and downloaded files are never stored there, so a custom location
-cannot lose them and an update patches the folder it finds instead of quietly
-reinstalling on `C:`.
-
-Downloads go where you choose: **Settings > Storage > Download folder**. It
-defaults to `%USERPROFILE%\Downloads\Soocial`, is checked for write access
-before it is accepted, and never overwrites a file that is already there -
-`report (2).pdf`, not `report.pdf` again.
-
-Uninstalling removes the `Soocial` folder, the shortcuts and the registry
-entry. It refuses to touch a folder that is not named `Soocial`, and it keeps
-your logins and settings unless you explicitly tick the box.
-[docs/INSTALLATION.md](docs/INSTALLATION.md) is the full contract, including
-what is verified and how to verify it.
-
-To add a service afterwards, click the `+` button at the bottom of the
-sidebar. Right click any icon in the sidebar to edit, reorder, mute or
-remove it.
-
-## Shortcuts
+## Keyboard Shortcuts
 
 | Keys | Action |
 | ---- | ------ |
@@ -99,26 +48,20 @@ remove it.
 | `Ctrl+Q` | Quit (the close button only hides to the tray) |
 | `Alt` | Show the menu bar |
 
-## Build from source
+## Build from Source (For Developers)
 
-Requires Node.js 20 or newer.
+Requires **Node.js 20+**.
 
 ```bash
+# Install dependencies
 npm install
-npm start            # run in development
-npm test             # path rules, install metadata, installer contract, NSIS compile
-npm run test:ui      # boots the app and drives it over CDP (needs xvfb on Linux)
-npm run build        # build the Windows installer into dist/
-npm run build:store  # build the MSIX package for the Microsoft Store
+
+# Run in development mode
+npm start
+
+# Build the Windows installer (creates an .exe in /dist)
+npm run build
 ```
-
-The two channels never cross: the installer updates itself through GitHub
-Releases, the Store package leaves that to the Store. See
-[docs/MICROSOFT-STORE.md](docs/MICROSOFT-STORE.md).
-
-Architecture notes, design decisions and troubleshooting live in
-[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). Issues and pull requests are
-welcome.
 
 ## License
 
