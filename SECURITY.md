@@ -8,7 +8,7 @@ Releases, so staying current is one click.
 Please do not open a public issue for security problems. Use GitHub's
 private vulnerability reporting instead:
 
-**https://github.com/MrJOYEN/soocial/security/advisories/new**
+**https://github.com/Kishore-june/Soocial/security/advisories/new**
 
 Describe the issue, how to reproduce it, and what an attacker could do with
 it. You will get an answer as fast as possible, usually within a few days.

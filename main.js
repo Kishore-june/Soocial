@@ -35,7 +35,7 @@ const catalogIcons = require('./catalog-icons');
 const i18n = require('./i18n');
 const { t } = i18n;
 
-const REPO_URL = 'https://github.com/MrJOYEN/soocial';
+const REPO_URL = 'https://github.com/Kishore-june/Soocial';
 const STORE_URL = 'ms-windows-store://pdp/?productid=9PBW3G2B60J6';
 
 // Build Microsoft Store : Electron leve ce drapeau quand le process tourne
