@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:;"
+    />
+    <title>Soocial</title>
+    <!-- L'ordre importe : glass.css pose les jetons, style.css les consomme. -->
+    <link rel="stylesheet" href="glass.css" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Barre de titre : dessinee ici, commandee par le main. Boutons a gauche, a
+         la maniere mac, mais chacun fait ce que fait son equivalent Windows. -->
+    <header id="titlebar">
+      <div class="titlebar-controls">
+        <button class="win-button" type="button" data-action="minimize">
+          <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none" /></svg>
+        </button>
+        <button class="win-button" type="button" data-action="maximize">
+          <svg viewBox="0 0 12 12" aria-hidden="true" class="glyph-maximize"><rect x="2.6" y="2.6" width="6.8" height="6.8" rx="1.4" stroke="currentColor" stroke-width="1.5" fill="none" /></svg>
+          <svg viewBox="0 0 12 12" aria-hidden="true" class="glyph-restore"><path d="M4.2 3h4.8v4.8M3 4.2H7.8V9H3z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round" /></svg>
+        </button>
+        <button class="win-button" type="button" data-action="close">
+          <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3.2 3.2l5.6 5.6M8.8 3.2l-5.6 5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" fill="none" /></svg>
+        </button>
+      </div>
+
+      <span class="titlebar-title">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" fill="var(--accent)" opacity="0.16" />
+          <circle cx="12" cy="12" r="5.4" fill="var(--accent)" />
+        </svg>
+        <b id="titlebar-title">Soocial</b>
+        <small id="titlebar-subtitle"></small>
+      </span>
+
+      <span class="titlebar-spacer"></span>
+
+      <div class="titlebar-actions">
+        <button class="glass-button" type="button" data-action="menu" data-i18n-title="titlebar.menu" title="Menu">
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+            <path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Sidebar : toujours visible. Le reste de la fenetre est recouvert par la
+         WebContentsView du service actif (gere dans main.js). -->
+    <nav id="sidebar" aria-label="Services">
+      <!-- Navigation : quatre destinations, pas de menu deroulant. "Services",
+           c'est la liste en dessous ; la nommer ici serait un bouton sans effet. -->
+      <div id="sidebar-nav" role="navigation">
+        <button class="nav-item" type="button" data-page="home" data-i18n-title="nav.home" title="Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20H4z" /></svg>
+        </button>
+        <button class="nav-item" type="button" data-page="favorites" data-i18n-title="nav.favorites" title="Favorites">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="m12 4.5 2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4L4.2 10.2l5.4-.8z" /></svg>
+        </button>
+        <button class="nav-item" type="button" data-page="settings" data-i18n-title="nav.settings" title="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3.2" /><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6.1 6.1l1.4 1.4M16.5 16.5l1.4 1.4M17.9 6.1l-1.4 1.4M7.5 16.5l-1.4 1.4" stroke-linecap="round" /></svg>
+        </button>
+        <button class="nav-item" type="button" data-page="help" data-i18n-title="nav.help" title="Help">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path d="M9.6 9.4a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.8-.9 1.4v.4" /><path d="M12 17.2h.01" /></svg>
+        </button>
+      </div>
+
+      <div id="services"></div>
+
+      <div id="sidebar-actions">
+        <button id="update-btn" class="action update hidden" type="button" title="Update">
+          <span aria-hidden="true">↑</span>
+        </button>
+        <!-- Ne pas deranger : le clic ouvre un menu natif avec les durees.
+             Le bouton porte aussi l'etat (lune allumee quand actif). -->
+        <button id="dnd-btn" class="action" type="button" title="Do not disturb" data-i18n-title="sidebar.dnd">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20.4 14.3A8.5 8.5 0 0 1 9.7 3.6a8.5 8.5 0 1 0 10.7 10.7z" />
+          </svg>
+        </button>
+        <!-- Chemin visible vers le melangeur : Ctrl+M et le sous-menu du clic
+             droit y menent aussi, mais aucun des deux ne se decouvre seul. -->
+        <button id="mixer-btn" class="action" type="button" title="Volume mixer" data-i18n-title="sidebar.mixer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 21v-6M4 11V3M12 21v-9M12 8V3M20 21v-4M20 13V3" />
+            <path d="M1.5 15h5M9.5 12h5M17.5 17h5" />
+          </svg>
+        </button>
+        <button id="add-btn" class="action" type="button" title="Add a service" data-i18n-title="sidebar.add">
+          <span aria-hidden="true">+</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Zone principale : visible quand la vue du service est masquee — erreur de
+         chargement, service en veille, ou boite de dialogue ouverte. -->
+    <main id="content">
+      <div id="overlay" class="hidden">
+        <div class="overlay-card">
+          <div class="overlay-avatar" id="overlay-avatar">--</div>
+          <h1 id="overlay-title">Chargement...</h1>
+          <p id="overlay-message"></p>
+          <button id="overlay-retry" class="hidden" type="button" data-i18n="overlay.retry">Retry</button>
+        </div>
+      </div>
+
+      <!-- Separateur de la vue partagee : vit dans la bande que les deux vues
+           natives laissent libre, se deplace au cliqué-glissé. -->
+      <div id="split-divider" class="hidden"></div>
+
+      <!-- Apercu pendant le glissement du separateur : les vraies vues sont
+           escamotees (couches natives, elles avaleraient la souris). -->
+      <div id="drag-preview" class="hidden">
+        <div class="drag-pane" id="drag-pane-a"></div>
+        <div class="drag-pane" id="drag-pane-b"></div>
+      </div>
+
+      <!-- Ecran de code d'un service protege : cale sur la part du service
+           concerne, la sidebar reste utilisable pour passer ailleurs. -->
+      <div id="service-lock" class="hidden">
+        <form id="service-lock-form" autocomplete="off">
+          <span class="logo lg" id="service-lock-logo"><img alt="" hidden /><span></span></span>
+          <h1 id="service-lock-title"></h1>
+          <p class="lock-hint" data-i18n="serviceLock.hint">Enter the code to open this service.</p>
+          <input
+            id="service-lock-pin"
+            type="password"
+            maxlength="64"
+            placeholder="Code"
+            data-i18n-placeholder="lock.placeholder"
+          />
+          <p id="service-lock-error" class="hidden"></p>
+          <button type="submit" data-i18n="lock.unlock">Unlock</button>
+        </form>
+      </div>
+
+      <!-- Deux densites, une seule vue : la galerie occupe tout tant qu'aucun
+           service n'est choisi, puis se resserre pour laisser place aux
+           reglages. La classe .picked sur #modal fait la bascule. -->
+      <div id="modal" class="hidden">
+        <div id="picker">
+          <header class="picker-head">
+            <h1 id="form-title" data-i18n="picker.title">Add a service</h1>
+            <button id="form-cancel" type="button" class="ghost" aria-label="Close">&times;</button>
+          </header>
+
+          <div class="search-bar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+            <input
+              id="f-search"
+              type="text"
+              autocomplete="off"
+              placeholder="Search services, or paste any address" data-i18n-placeholder="picker.search"
+            />
+          </div>
+
+          <div id="catalog-grid"></div>
+          <p id="catalog-empty" class="hidden">
+            <span data-i18n="picker.empty">No match. Paste the address above to add it anyway.</span>
+          </p>
+        </div>
+
+        <form id="service-form" autocomplete="off">
+          <div class="preview">
+            <span class="preview-logo" id="preview-logo"><img alt="" hidden /><span></span></span>
+            <span class="preview-meta">
+              <b id="preview-name" data-i18n="form.newService">New service</b>
+              <span id="preview-slot">Appears at the end of the sidebar</span>
+            </span>
+          </div>
+
+          <label class="field">
+            <span data-i18n="form.name">Name</span>
+            <input id="f-name" type="text" maxlength="60" required placeholder="WhatsApp Work" data-i18n-placeholder="form.namePlaceholder" />
+          </label>
+
+          <label class="field">
+            <span data-i18n="form.address">Address</span>
+            <input id="f-url" type="text" required placeholder="https://web.whatsapp.com" />
+          </label>
+
+          <div class="row">
+            <label class="field">
+              <span data-i18n="form.initials">Initials</span>
+              <input id="f-initials" type="text" maxlength="4" placeholder="WW" />
+            </label>
+            <label class="field color">
+              <span data-i18n="form.colour">Colour</span>
+              <input id="f-color" type="color" value="#45475a" />
+            </label>
+          </div>
+
+          <label class="field">
+            <span data-i18n="form.sleep">Sleep when unused</span>
+            <select id="f-hibernate">
+              <option value="0" data-i18n="form.sleep.never">Never</option>
+              <option value="15" data-i18n="form.sleep.15">After 15 minutes</option>
+              <option value="30" data-i18n="form.sleep.30">After 30 minutes</option>
+              <option value="60" data-i18n="form.sleep.60">After 1 hour</option>
+              <option value="180" data-i18n="form.sleep.180">After 3 hours</option>
+            </select>
+            <small data-i18n="form.sleepHint">Frees memory, but stops badges and notifications until you come back.</small>
+          </label>
+
+          <label class="check">
+            <input id="f-spoof" type="checkbox" />
+            <span>
+              <span data-i18n="form.spoof">Identify as Chrome</span>
+              <small data-i18n="form.spoofHint">Required by WhatsApp, which turns Electron browsers away.</small>
+            </span>
+          </label>
+
+          <label class="check">
+            <input id="f-preload" type="checkbox" checked />
+            <span>
+              <span data-i18n="form.preload">Load at startup</span>
+              <small data-i18n="form.preloadHint">Without it, no badge and no notification until you first open it.</small>
+            </span>
+          </label>
+
+          <!-- La protection ne se coche pas : elle se prouve. Le bouton ouvre
+               la fenetre de code (creation ou saisie), et l'option ne bascule
+               que si le code est bon. Visible en edition seulement. -->
+          <div class="field hidden" id="protect-row">
+            <span data-i18n="form.protected">Require the lock code</span>
+            <button type="button" id="f-protect"></button>
+            <small data-i18n="form.protectedHint">Hides this service behind the app lock code until it is entered.</small>
+          </div>
+
+          <p id="form-error" class="hidden"></p>
+
+          <div class="form-actions">
+            <button id="form-delete" class="danger hidden" type="button" data-i18n="form.delete">Delete</button>
+            <span class="spacer"></span>
+            <button id="form-back" type="button">Back</button>
+            <button id="form-save" class="primary" type="submit">Add service</button>
+          </div>
+        </form>
+      </div>
+    </main>
+
+    <!-- Melangeur de volume, ouvert depuis Affichage ou le sous-menu Volume du
+         clic droit. Comme les autres modales, il escamote les vues natives : sans
+         ca les WebContentsView passeraient par-dessus. Les lignes sont produites
+         par sidebar.js a chaque ouverture. -->
+    <div id="mixer" class="hidden">
+      <div id="mixer-panel" role="dialog" aria-modal="true" aria-labelledby="mixer-title">
+        <header class="mixer-head">
+          <h1 id="mixer-title" data-i18n="mixer.title">Volume mixer</h1>
+          <span id="mixer-count"></span>
+          <button id="mixer-close" type="button" class="ghost" aria-label="Close" data-i18n-title="mixer.close">&times;</button>
+        </header>
+
+        <div id="mixer-rows"></div>
+
+        <p class="mixer-hint" data-i18n="mixer.hint"></p>
+      </div>
+    </div>
+
+    <!-- Formulaire du code de verrouillage (definir / changer / supprimer),
+         ouvert depuis le menu Fichier. La vue du service est escamotee pendant
+         qu'il est visible, comme pour le formulaire de service. -->
+    <div id="lock-setup" class="hidden">
+      <form id="lock-setup-form" autocomplete="off">
+        <h1 id="lock-setup-title"></h1>
+        <p class="lock-hint" data-i18n="lock.hint">
+          Locks the window behind a code. Data on disk stays readable outside Soocial:
+          this is a privacy screen, not encryption.
+        </p>
+
+        <label class="field" id="lock-current-field">
+          <span data-i18n="lock.current">Current code</span>
+          <input id="lock-current" type="password" maxlength="64" />
+        </label>
+
+        <label class="field" id="lock-new-field">
+          <span data-i18n="lock.new">New code (at least 4 characters)</span>
+          <input id="lock-new" type="password" maxlength="64" />
+        </label>
+
+        <label class="field" id="lock-confirm-field">
+          <span data-i18n="lock.confirmField">Confirm the code</span>
+          <input id="lock-confirm" type="password" maxlength="64" />
+        </label>
+
+        <p id="lock-setup-error" class="hidden"></p>
+
+        <div class="form-actions">
+          <span class="spacer"></span>
+          <button type="button" id="lock-setup-cancel" data-i18n="form.cancel">Cancel</button>
+          <button type="submit" class="primary" id="lock-setup-save"></button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Ecran de verrouillage : par-dessus tout, sidebar comprise. Les vues de
+         service sont masquees cote main tant qu'il est affiche. -->
+    <div id="lockscreen" class="hidden">
+      <form id="lock-form" autocomplete="off">
+        <img class="lock-logo" src="../assets/icon.ico" alt="" />
+        <h1 data-i18n="lock.locked">Soocial is locked</h1>
+        <input
+          id="lock-pin"
+          type="password"
+          maxlength="64"
+          placeholder="Code"
+          data-i18n-placeholder="lock.placeholder"
+        />
+        <p id="lock-error" class="hidden"></p>
+        <button type="submit" data-i18n="lock.unlock">Unlock</button>
+      </form>
+    </div>
+
+    <!-- Onboarding du premier lancement : par-dessus tout, sidebar comprise.
+         Etape 1, la langue ; etape 2, les services depuis le catalogue. -->
+    <div id="onboarding" class="hidden">
+      <section class="ob-step" id="ob-welcome">
+        <img class="ob-logo" src="../assets/icon.ico" alt="" />
+        <h1 data-i18n="ob.welcome">Welcome to Soocial</h1>
+        <p class="ob-tagline" data-i18n="ob.tagline">
+          All your web apps in one window, each account in its own isolated session.
+        </p>
+        <div class="ob-langs">
+          <button type="button" data-lang="en">English</button>
+          <button type="button" data-lang="fr">Français</button>
+          <button type="button" data-lang="es">Español</button>
+        </div>
+        <small data-i18n="ob.langHint">You can change the language later from the File menu.</small>
+      </section>
+
+      <section class="ob-step hidden" id="ob-pick">
+        <header class="ob-pick-head">
+          <h1 data-i18n="ob.pickTitle">Pick your services</h1>
+          <p data-i18n="ob.pickHint">
+            Choose what you use every day. You can add several accounts of the same service
+            later, and they will never sign each other out.
+          </p>
+        </header>
+        <div id="ob-grid"></div>
+        <footer class="ob-footer">
+          <button type="button" id="ob-skip" data-i18n="ob.skip">Start empty</button>
+          <button type="button" id="ob-start" class="primary" disabled></button>
+        </footer>
+      </section>
+    </div>
+
+    <!-- Pages hors service : accueil, favoris, reglages, aide. Le conteneur est
+         vide tant qu'aucune page n'est ouverte (rien a cacher derriere les vues). -->
+    <section id="page-root" class="page" hidden></section>
+
+    <script src="sidebar.js"></script>
+    <script src="titlebar.js"></script>
+    <script src="pages.js"></script>
+  </body>
+</html>

@@ -1,0 +1,134 @@
+name: CI
+
+# Deux emplois, deux responsabilites. `checks` prouve ce qui est prouvable sans
+# Windows : la politique de chemin, le meta-dossier, le contrat installeur/app,
+# et que le script NSIS se compile. `windows` est le seul endroit ou l'on peut
+# reelement installer, mettre a jour et desinstaller - donc c'est la que la
+# moitie "chemin personnalise" du produit est verifiee. Un vert ici ne vaut pas
+# un vert la-bas, et les messages le disent.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Headless checks (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install NSIS and the libraries Electron needs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            nsis xvfb \
+            libgtk-3-0 libnss3 libasound2t64 libgbm1 libxss1 libnotify4 \
+            libayatana-appindicator3-1
+
+      # Le contrat installeur <-> shared/*.js, les regles de chemin, le format de
+      # install.json, et la compilation du script NSIS (installeur ET
+      # desinstallateur) avec le makensis du distributeur.
+      - name: Tests
+        run: npm ci && npm test
+
+      - name: Installer script compiles
+        run: npm run test:installer
+
+      # Une vraie fenetre sous Xvfb : ce que ces tests prouvent est limite au DOM,
+      # a l'IPC et au CSS. Jamais au comportement Windows.
+      - name: UI over CDP
+        run: npm run test:ui
+
+      - name: Upload the UI log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-log
+          path: ${{ github.workspace }}/*.log
+          if-no-files-found: ignore
+
+  windows:
+    name: Install, update, uninstall (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build the installer
+        run: |
+          npm ci
+          npm run build
+
+      # Le dossier choisi contient un espace et un accent : c'est la moitie des
+      # bugs d'installateur Windows. Le nom est construit par code point pour que
+      # ce fichier reste en ASCII - un octet latin1 perdu dans un YAML ne se voit
+      # que sur la machine de quelqu'un d'autre.
+      - name: Install into a folder with a space and an accent
+        shell: pwsh
+        run: |
+          $accent = [string][char]0x00C9   # E aigu
+          $parent = "D:\Soocial CI ${accent}t"
+          New-Item -ItemType Directory -Force -Path $parent | Out-Null
+          # Un voisin qui n'a rien a voir avec nous : il devra etre intact apres.
+          $sibling = Join-Path $parent "Photoshop"
+          New-Item -ItemType Directory -Force -Path $sibling | Out-Null
+          Set-Content -LiteralPath (Join-Path $sibling 'keep.txt') -Value 'ne doit jamais bouger'
+
+          $setup = Get-ChildItem -Path dist -Filter '*.exe' | Select-Object -First 1
+          if (-not $setup) { Write-Error 'aucun installateur produit dans dist/'; exit 1 }
+          "installateur : $($setup.FullName)"
+
+          # /D= doit etre le dernier parametre et ne doit pas etre entre
+          # guillemets : c'est NSIS qui le prend litteralement.
+          $proc = Start-Process -FilePath $setup.FullName `
+            -ArgumentList '/S', "/D=$parent" -Wait -PassThru
+          "code de sortie : $($proc.ExitCode)"
+          if ($proc.ExitCode -ne 0) { exit $proc.ExitCode }
+
+      - name: Verify the install location, metadata and shortcuts
+        shell: pwsh
+        run: |
+          $accent = [string][char]0x00C9
+          $parent = "D:\Soocial CI ${accent}t"
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          .\test\installer\verify-install.ps1 -Parent $parent -Version $version `
+            -BaselineFile "$env:RUNNER_TEMP\baseline.json"
+
+      - name: Uninstall and verify nothing else was touched
+        shell: pwsh
+        run: |
+          $accent = [string][char]0x00C9
+          $parent = "D:\Soocial CI ${accent}t"
+          $root = Join-Path $parent 'Soocial'
+          $uninstall = Get-ChildItem -Path $root -Filter 'Uninstall*.exe' | Select-Object -First 1
+          if (-not $uninstall) { Write-Error "desinstallateur absent de $root"; exit 1 }
+          $proc = Start-Process -FilePath $uninstall.FullName -ArgumentList '/S' -Wait -PassThru
+          "code de sortie : $($proc.ExitCode)"
+          .\test\installer\verify-install.ps1 -Root $root -AfterUninstall `
+            -BaselineFile "$env:RUNNER_TEMP\baseline.json"
+
+      - name: Upload the installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: dist/*.exe
+          if-no-files-found: error

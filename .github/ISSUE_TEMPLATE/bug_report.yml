@@ -1,0 +1,38 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Soocial version
+      description: Open Help > About Soocial, click "Copy details" and paste the first line here.
+      placeholder: Soocial 1.0.0
+    validations:
+      required: true
+  - type: input
+    id: service
+    attributes:
+      label: Service involved
+      description: Which service was active when it happened, if any.
+      placeholder: WhatsApp, Discord, a custom URL...
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+  - type: textarea
+    id: details
+    attributes:
+      label: Anything else
+      description: Screenshots, or the full details block copied from Help > About Soocial.

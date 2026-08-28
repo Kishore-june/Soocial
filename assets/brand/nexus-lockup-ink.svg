@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 100" width="340" height="100">
+  <title>Nexus</title>
+  <path d="M16.4 12.6L36.5 12.6A4.2 4.2 0 0 1 40.51 15.57L53.53 57.89A4.2 4.2 0 0 1 48.23 63.12L15.11 52.44A4.2 4.2 0 0 1 12.2 48.44L12.2 16.8A4.2 4.2 0 0 1 16.4 12.6Z" fill="#1A202C"></path>
+  <path d="M52.34 12.6L83.6 12.6A4.2 4.2 0 0 1 87.8 16.8L87.8 30.5A4.2 4.2 0 0 1 83.6 34.7L56.43 34.7A4.2 4.2 0 0 1 52.4 31.7L48.31 18A4.2 4.2 0 0 1 52.34 12.6Z" fill="#1A202C"></path>
+  <path d="M17.67 59.44L55.1 71.36A4.2 4.2 0 0 1 57.79 73.98L60.54 81.81A4.2 4.2 0 0 1 56.58 87.4L16.4 87.4A4.2 4.2 0 0 1 12.2 83.2L12.2 63.45A4.2 4.2 0 0 1 17.67 59.44Z" fill="#1A202C"></path>
+  <path d="M60.38 41.4L83.6 41.4A4.2 4.2 0 0 1 87.8 45.6L87.8 83.2A4.2 4.2 0 0 1 83.6 87.4L72.55 87.4A4.2 4.2 0 0 1 68.56 84.49L56.38 46.89A4.2 4.2 0 0 1 60.38 41.4Z" fill="#8063F6"></path>
+  <text x="116" y="50" dominant-baseline="central" font-family="Archivo, &#39;Segoe UI Variable Display&#39;, &#39;Segoe UI&#39;, system-ui, sans-serif" font-size="54" font-weight="620" letter-spacing="-1.6" fill="#1A202C">Nexus</text>
+</svg>

@@ -1,0 +1,26 @@
+
+        <!--
+          Lancement avec Windows, version MSIX.
+
+          app.setLoginItemSettings() ecrit dans HKCU\...\Run. Dans un paquet MSIX
+          le registre est virtualise : l'entree part dans la ruche du paquet, que
+          Windows ne lit pas a l'ouverture de session. Le reglage semble pris en
+          compte et ne demarre jamais rien. La seule voie valide est cette
+          extension de manifeste.
+
+          Enabled="false" : l'entree est declaree, pas activee. L'utilisateur
+          l'active depuis Parametres > Applications > Demarrage, ou depuis le
+          menu Fichier de Nexus qui ouvre directement cette page. Le passage a
+          "true" par programme demande l'API WinRT StartupTask, hors de portee
+          d'Electron sans module natif — et un paquet qui s'auto-active au
+          demarrage se fait refuser a la certification.
+
+          TaskId sert de cle a Windows pour retenir le choix de l'utilisateur :
+          il ne doit plus jamais changer une fois le paquet publie.
+        -->
+        <desktop:Extension
+          Category="windows.startupTask"
+          Executable="app\Nexus.exe"
+          EntryPoint="Windows.FullTrustApplication">
+          <desktop:StartupTask TaskId="NexusStartup" Enabled="false" DisplayName="Nexus" />
+        </desktop:Extension>

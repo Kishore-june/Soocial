@@ -1,0 +1,708 @@
+/* ==========================================================================
+   Soocial - systeme de design "glass"
+   ==========================================================================
+
+   Les jetons (couleurs, rayons, ombres, flou, rythme) vivent ICI et nulle part
+   ailleurs. style.css ne fait que les consommer ; les reglages d'intensite
+   (`data-glass`) et de theme (`data-theme`) ne touchent que des variables.
+
+   Pourquoi si peu de flou : `backdrop-filter` est le seul cout reel de cette
+   interface. Chaque couche floutee force Chromium a recomposer tout ce qui est
+   derriere elle, et le conteneur de service est juste derriere - donc un flou
+   sur les bords de la zone de service coute la fluidite du scroll de WhatsApp,
+   sur tous les postes, pour un effet que personne ne regarde. Le flou est
+   reserve aux trois surfaces qui survolent reellement le contenu : la barre de
+   titre, la barre laterale, les boites flottantes. `data-glass="off"` le
+   supprime, et c'est prevu pour les machines lentes comme pour
+   `prefers-reduced-transparency`.
+   ========================================================================== */
+
+:root {
+  /* --- dimensions (reues du main via bootstrap, voir shared/layout-metrics.js) - */
+  --sidebar-width: 72px;
+  --sidebar-width-collapsed: 60px;
+  --titlebar-height: 40px;
+  --split-gap: 6px;
+
+  /* --- rythme ---------------------------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* --- rayons ---------------------------------------------------------------- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* --- typographie ----------------------------------------------------------- */
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --size-caption: 11.5px;
+  --size-body: 13px;
+  --size-strong: 14px;
+  --size-title: 20px;
+  --line: 1.45;
+
+  /* --- animation ------------------------------------------------------------- */
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration: 140ms;
+  --duration-slow: 220ms;
+
+  /* --- flou (regle par data-glass) ------------------------------------------- */
+  --blur: 18px;
+  --saturation: 1.4;
+
+  /* --- le reste vient du theme, plus bas ------------------------------------ */
+  color-scheme: dark;
+}
+
+/* ---------------------------------------------------------------- thematique -- */
+
+html[data-theme='dark'] {
+  --bg: #14141d;
+  --bg-gradient-a: #1b1b2a;
+  --bg-gradient-b: #101017;
+  --surface: rgba(38, 38, 56, 0.72);
+  --surface-solid: #232336;
+  --surface-raised: rgba(52, 52, 76, 0.6);
+  --sidebar-bg: rgba(26, 26, 40, 0.72);
+  --titlebar-bg: rgba(20, 20, 31, 0.6);
+  --content-bg: #101017;
+  --divider: rgba(140, 146, 175, 0.22);
+  --hairline: rgba(255, 255, 255, 0.08);
+  --highlight: rgba(255, 255, 255, 0.07);
+  --text: #e6e9f7;
+  --text-dim: #9094ab;
+  --text-faint: #6c7086;
+  --accent: #8ab4ff;
+  --accent-ink: #0d1220;
+  --badge: #e5484d;
+  --danger: #e5484d;
+  --ok: #4cbf7a;
+  --shadow: 0 18px 48px rgba(0, 0, 0, 0.5);
+  --ring: rgba(138, 180, 255, 0.55);
+}
+
+html[data-theme='light'] {
+  --bg: #eef0f8;
+  --bg-gradient-a: #f7f8fd;
+  --bg-gradient-b: #e6e9f6;
+  --surface: rgba(255, 255, 255, 0.72);
+  --surface-solid: #ffffff;
+  --surface-raised: rgba(255, 255, 255, 0.8);
+  --sidebar-bg: rgba(248, 249, 254, 0.72);
+  --titlebar-bg: rgba(252, 252, 255, 0.62);
+  --content-bg: #ffffff;
+  --divider: rgba(28, 30, 48, 0.14);
+  --hairline: rgba(28, 30, 48, 0.1);
+  --highlight: rgba(255, 255, 255, 0.6);
+  --text: #1c1e30;
+  --text-dim: #5f6478;
+  --text-faint: #8b90a6;
+  --accent: #2f6bfd;
+  --accent-ink: #ffffff;
+  --badge: #d92d20;
+  --danger: #c62828;
+  --ok: #177245;
+  --shadow: 0 18px 40px rgba(28, 30, 48, 0.16);
+  --ring: rgba(47, 107, 253, 0.45);
+  color-scheme: light;
+}
+
+/* Intensite du verre : trois cranx, un seul levier. */
+html[data-glass='off'] {
+  --blur: 0px;
+  --saturation: 1;
+  --surface: var(--surface-solid);
+  --sidebar-bg: var(--surface-solid);
+  --titlebar-bg: var(--surface-solid);
+}
+
+html[data-glass='soft'] {
+  --blur: 14px;
+  --saturation: 1.25;
+}
+
+html[data-glass='full'] {
+  --blur: 26px;
+  --saturation: 1.6;
+}
+
+/* Deux demandes differentes, un meme resultat : l'une vient du systeme, l'autre
+   des reglages. Les deux coupent le flou et les transitions, aucune ne coupe la
+   lisibilite. */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --blur: 0px;
+    --saturation: 1;
+  }
+}
+
+html[data-animations='reduced'],
+html[data-animations='off'] {
+  --duration: 1ms;
+  --duration-slow: 1ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration: 1ms;
+    --duration-slow: 1ms;
+  }
+}
+
+html[data-animations='off'] *,
+html[data-animations='reduced'] *,
+html[data-animations='off'] *::before,
+html[data-animations='off'] *::after {
+  transition-duration: 1ms !important;
+  animation-duration: 1ms !important;
+  animation-iteration-count: 1 !important;
+}
+
+/* ------------------------------------------------------------------- fond ---- */
+
+html,
+body {
+  background: radial-gradient(120% 80% at 0% 0%, var(--bg-gradient-a), var(--bg-gradient-b));
+  /* La place de la barre de titre est reservee ici, pas par un conteneur : le
+     flex existant (sidebar + contenu) n'a pas a etre reecrit pour 40 px. */
+  padding-top: var(--titlebar-height);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--size-body);
+  line-height: var(--line);
+}
+
+/* ==========================================================================
+   Barre de titre (boutons a la mac, comportement Windows)
+   ========================================================================== */
+
+#titlebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  height: var(--titlebar-height);
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-2) 0 var(--space-3);
+  background: var(--titlebar-bg);
+  backdrop-filter: blur(var(--blur)) saturate(var(--saturation));
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--saturation));
+  border-bottom: 1px solid var(--hairline);
+  /* La barre se fait la elle-meme : -webkit-app-region est interprete par la
+     couche fenetre d'Electron, pas par le DOM. */
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+html[data-glass='off'] #titlebar,
+html[data-glass='off'] #sidebar {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  #titlebar,
+  #sidebar,
+  .glass-card,
+  .glass-dialog {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--surface-solid);
+  }
+}
+
+.titlebar-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--window-button-gap, 8px);
+  -webkit-app-region: no-drag;
+}
+
+/* Les trois pastilles. Elles ressemblent a macOS mais font exactement ce que
+   font les boutons Windows : reduire, agrandir/reduire, fermer - et la
+   derniere respect le reglage "fermer = cacher dans le tray". */
+.win-button {
+  width: var(--window-button-size, 24px);
+  height: var(--window-button-size, 24px);
+  padding: 0;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  color: var(--text-dim);
+  display: grid;
+  place-items: center;
+  cursor: default;
+  transition: background var(--duration) var(--ease), color var(--duration) var(--ease),
+    transform var(--duration) var(--ease);
+}
+
+.win-button svg {
+  width: 11px;
+  height: 11px;
+  opacity: 0;
+  transition: opacity var(--duration) var(--ease);
+}
+
+.titlebar-controls:hover .win-button svg {
+  opacity: 1;
+}
+
+.win-button[data-action='close'] {
+  background: #ef6a62;
+}
+.win-button[data-action='minimize'] {
+  background: #f5bd4f;
+}
+.win-button[data-action='maximize'] {
+  background: #5bc664;
+}
+
+.win-button:hover {
+  filter: brightness(1.08);
+}
+
+.win-button:active {
+  transform: scale(0.92);
+}
+
+.win-button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* L'app n'est pas active : les pastilles se taisent, comme dans Windows. */
+html[data-window-focused='false'] .win-button {
+  background: var(--surface-raised);
+}
+
+.titlebar-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--size-caption);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
+  margin-left: var(--space-3);
+}
+
+.titlebar-title img {
+  width: 16px;
+  height: 16px;
+}
+
+.titlebar-spacer {
+  flex: 1 1 auto;
+}
+
+.titlebar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  -webkit-app-region: no-drag;
+}
+
+/* ==========================================================================
+   Primitives
+   ========================================================================== */
+
+.glass-card,
+.glass-dialog,
+.glass-panel {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow), inset 0 1px 0 var(--highlight);
+  backdrop-filter: blur(var(--blur)) saturate(var(--saturation));
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--saturation));
+}
+
+html[data-glass='off'] .glass-card,
+html[data-glass='off'] .glass-dialog,
+html[data-glass='off'] .glass-panel {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.glass-button,
+button.glass-button {
+  appearance: none;
+  font: inherit;
+  color: var(--text);
+  padding: 7px 14px;
+  border: 1px solid var(--divider);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  cursor: default;
+  transition: background var(--duration) var(--ease), border-color var(--duration) var(--ease);
+}
+
+.glass-button:hover {
+  background: var(--surface);
+  border-color: var(--text-faint);
+}
+
+.glass-button.primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.glass-button.danger {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+}
+
+.glass-button:disabled {
+  opacity: 0.45;
+}
+
+.glass-button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+/* Champs : le style Windows (cadre fin, fond legerrement creuse) plutot que le
+   "pill" iOS - dans un formulaire de reglages, l'allignement des cadres vaut
+   plus que la ressemblance. */
+.glass-field,
+input.glass-field,
+select.glass-field {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-solid);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius-sm);
+  padding: 6px 9px;
+  min-height: 28px;
+}
+
+.glass-field:focus {
+  outline: 2px solid var(--ring);
+  outline-offset: -1px;
+  border-color: var(--accent);
+}
+
+/* Interrupteur : le seul composant explicitement iOS, parce que c'est la que la
+   metaphore est comprise (une rangee, un libelle, un etat). */
+.glass-switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--divider);
+  background: var(--surface-solid);
+  cursor: default;
+  transition: background var(--duration) var(--ease), border-color var(--duration) var(--ease);
+}
+
+.glass-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-pill);
+  background: var(--text-dim);
+  transition: transform var(--duration) var(--ease), background var(--duration) var(--ease);
+}
+
+.glass-switch[aria-checked='true'] {
+  background: var(--accent);
+  border-color: transparent;
+}
+
+.glass-switch[aria-checked='true']::after {
+  transform: translateX(18px);
+  background: #fff;
+}
+
+.glass-switch:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Segments (theme clair/sombre/systeme) : trois choix exclusifs, pas trois cases. */
+.glass-segment {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  border: 1px solid var(--divider);
+  border-radius: var(--radius-md);
+  background: var(--surface-solid);
+}
+
+.glass-segment button {
+  appearance: none;
+  font: inherit;
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  padding: 5px 12px;
+  border-radius: calc(var(--radius-md) - 3px);
+  cursor: default;
+}
+
+.glass-segment button[aria-pressed='true'] {
+  background: var(--surface-raised);
+  color: var(--text);
+  box-shadow: inset 0 1px 0 var(--highlight);
+}
+
+.glass-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--badge);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+.glass-note {
+  color: var(--text-dim);
+  font-size: var(--size-caption);
+}
+
+.glass-note.error {
+  color: var(--danger);
+}
+
+.glass-note.ok {
+  color: var(--ok);
+}
+
+/* ==========================================================================
+   Pages hors service (accueil, favoris, reglages, aide)
+   ========================================================================== */
+
+.page {
+  /* fixed, pas absolute : le corps de la fenetre est un flex row sans conteneur
+     dedie aux pages, et un position:fixed se cale sur la zone libre sans en
+     demander la creation. La barre laterale reste utilisable a gauche. */
+  position: fixed;
+  left: var(--sidebar-width);
+  right: 0;
+  top: var(--titlebar-height);
+  bottom: 0;
+  overflow: auto;
+  padding: var(--space-5) var(--space-6) var(--space-6);
+  background: linear-gradient(180deg, var(--bg-gradient-a), var(--bg-gradient-b));
+}
+
+.page-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.page-head h1 {
+  font-family: var(--font-display);
+  font-size: var(--size-title);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.page-head p {
+  color: var(--text-dim);
+  font-size: var(--size-caption);
+}
+
+.page-close {
+  margin-left: auto;
+}
+
+/* Reglages : onglets a gauche, contenu a droite. Une colonne de rubrique est
+   plus lisible qu'un accordéon de sept sections quand on cherche "telechargements". */
+.settings-shell {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.settings-nav {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-nav button {
+  appearance: none;
+  text-align: left;
+  font: inherit;
+  color: var(--text-dim);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.settings-nav button:hover {
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+.settings-nav button[aria-current='true'] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: inset 0 1px 0 var(--highlight), 0 1px 0 var(--hairline);
+}
+
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.settings-group > h2 {
+  font-size: var(--size-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  font-weight: 600;
+  margin: 0 0 var(--space-1) var(--space-1);
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.setting-row + .setting-row {
+  border-top-left-radius: var(--radius-sm);
+  border-top-right-radius: var(--radius-sm);
+}
+
+.setting-row .label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.setting-row .label b {
+  display: block;
+  font-size: var(--size-strong);
+  font-weight: 600;
+}
+
+.setting-row .label small {
+  display: block;
+  color: var(--text-dim);
+  font-size: var(--size-caption);
+}
+
+.setting-row .value {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.path-cell {
+  font-family: "Cascadia Mono", "Consolas", monospace;
+  font-size: var(--size-caption);
+  color: var(--text-dim);
+  background: var(--surface-solid);
+  border: 1px solid var(--divider);
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  max-width: 46ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* Un chemin se lit de la fin, pas du debut : c'est le nom du dossier qui
+     compte, pas la lettre du lecteur. */
+  direction: rtl;
+  text-align: left;
+}
+
+/* Tuiles d'accueil et de favoris. */
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-3);
+}
+
+.glass-tile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  cursor: default;
+  transition: transform var(--duration) var(--ease), border-color var(--duration) var(--ease);
+}
+
+.glass-tile:hover {
+  border-color: var(--divider);
+  transform: translateY(-1px);
+}
+
+.glass-tile .avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: var(--size-body);
+  color: #fff;
+  background: var(--surface-solid);
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+
+.glass-tile .avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.glass-tile .meta {
+  min-width: 0;
+}
+
+.glass-tile .meta b {
+  display: block;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.glass-tile .meta small {
+  color: var(--text-dim);
+  font-size: var(--size-caption);
+}
