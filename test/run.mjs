@@ -60,12 +60,22 @@ for (const file of readdirSync(testDir).filter(
   const source = readFileSync(path.join(testDir, file), 'utf8');
   const windowed = needsWindow(source);
   if (windowed && !process.env.HUB_CDP_PORT) {
-    results.push([name, 'skip', 'veut HUB_CDP_PORT et une instance lancee en debug']);
+    // Ces tests supposent un profil VIERGE (ils comptent les services, attendent
+    // l'onboarding, posent un code). Le doute sur l'etat d'un profil existant
+    // coute plus cher qu'un profil cree pour l'occasion : lancer `npm run
+    // test:ui`, qui s'en occupe, plutôt que de brancher HUB_CDP_PORT sur une
+    // instance de travail.
+    results.push([name, 'skip', 'veut HUB_CDP_PORT et une instance en debug sur un profil neuf (npm run test:ui)']);
     continue;
   }
 
   const started = Date.now();
-  const args = [path.join(testDir, file)];
+  // Avant Node 22, WebSocket n'existe que derriere un drapeau : lance sans lui, un
+  // test CDP meurt d'un ReferenceError et l'echec ressemble a une regression de
+  // l'app. Meme regle que dans run-ui.mjs, pour la meme raison.
+  const flags =
+    windowed && Number(process.versions.node.split('.')[0]) < 22 ? ['--experimental-websocket'] : [];
+  const args = [...flags, path.join(testDir, file)];
   if (windowed) args.push(process.env.HUB_CDP_PORT);
   const { code } = await run(process.execPath, args);
   results.push([name, code === 0 ? 'ok' : 'fail', `${Date.now() - started} ms`]);

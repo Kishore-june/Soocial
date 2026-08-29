@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  La marque seule, sans vignette : les deux bulles. A poser sur un fond colore ou
+  sombre (barre laterale, ecran d'accueil, documentations). Le fond arrondi de
+  soocial-app-icon.svg est reserve aux cas ou Windows exige un carre.
+
+  Derive de soocial-app-icon.svg : memes formes, memes coordonnees.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Soocial">
+  <title>Soocial - la marque seule</title>
+  <g fill="#ffffff">
+    <rect x="232" y="92" width="176" height="124" rx="52" fill-opacity="0.34"/>
+    <rect x="84" y="176" width="288" height="196" rx="72"/>
+    <path d="M158 352l-46 78q-7 13 7 9l86-24z"/>
+  </g>
+</svg>

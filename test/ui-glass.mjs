@@ -13,6 +13,8 @@
  * depend du systeme d'exploitation et non du renderer.
  */
 
+import { readFileSync } from 'node:fs';
+
 const PORT = process.argv[2] || '9229';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -165,36 +167,89 @@ check('glass=full floute reellement', /blur\(26px\)/.test(String(blurFull)), Str
 await evalJs(`window.hub.updateSettings({ animations: 'reduced' })`);
 await sleep(400);
 check('animations reduites coupent les transitions', await evalJs(
-  `parseFloat(getComputedStyle(document.querySelector('.nav-item')).transitionDuration) <= 0.01`
-), await evalJs(`getComputedStyle(document.querySelector('.nav-item')).transitionDuration`));
+  `parseFloat(getComputedStyle(document.querySelector('.rail-logo')).transitionDuration) <= 0.01`
+), await evalJs(`getComputedStyle(document.querySelector('.rail-logo')).transitionDuration`));
 
 // ---------------------------------------------------------------------------
 // 4. Pages et reglages
 // ---------------------------------------------------------------------------
 
-check('la navigation a quatre destinations', (await count('#sidebar-nav [data-page]')) === 4, `${await count('#sidebar-nav [data-page]')}`);
+// Les dimensions viennent de shared/layout-metrics.js et sont posees sur <html> :
+// ce sont elles que le rendu doit refleter, pas les valeurs de repli du CSS.
+const sizes = JSON.parse(await evalJs(`JSON.stringify({
+  button: Math.round(document.querySelector('.win-button').getBoundingClientRect().width),
+  glyph: Math.round(document.querySelector('.win-button svg').getBoundingClientRect().width),
+  tile: document.querySelector('.service') ? Math.round(document.querySelector('.service').getBoundingClientRect().height) : null,
+  avatar: document.querySelector('.service .avatar') ? Math.round(document.querySelector('.service .avatar').getBoundingClientRect().width) : null,
+})`));
+check('les pastilles de fenetre mesurent 15 px', sizes.button === 15, `${sizes.button} px`);
+check('leur glyphe mesure 8 px', sizes.glyph === 8, `${sizes.glyph} px`);
+// Une barre sans service n'a rien a mesurer : le lanceur part d'un profil vierge,
+// et ce n'est pas une raison pour que le test casse. null est donc une sortie
+// admise, signalee comme telle dans le detail.
+const tilesOk = sizes.tile === null || (sizes.tile === 40 && sizes.avatar === 30);
+check('la tuile de service fait 40 px, son icone 30', tilesOk,
+  sizes.tile === null ? 'aucun service dans ce profil' : `${sizes.tile}/${sizes.avatar} px`);
+
+// La navigation est un seul bouton : l'icone du logiciel. Les quatre destinations
+// sont dans le menu natif qu'il ouvre, donc elles ne se comptent plus dans le DOM.
+check("l'entree du menu est l'icone du logiciel", await evalJs(
+  `!!document.querySelector('#rail-logo.rail-logo[aria-haspopup="menu"]')`
+));
+check('aucun bouton de page ne traine a cote', (await count('#sidebar [data-page]')) === 0, `${await count('#sidebar [data-page]')} bouton(s)`);
+check('le duplicata ≡ de la barre de titre a disparu', (await count('.titlebar-actions button')) === 0, `${await count('.titlebar-actions button')} bouton(s)`);
+
+// Le contenu du menu est decide par le main (un popup natif ne se lit pas depuis
+// le renderer) : on verifie la source, qui est le seul endroit ou il est ecrit.
+const menuSource = readFileSync(new URL('../main.js', import.meta.url), 'utf8');
+const navMenuBody = menuSource.slice(menuSource.indexOf('function navMenuTemplate'), menuSource.indexOf('function showNavMenu'));
+check('le menu groupe les quatre pages',
+  /\['home', 'favorites', 'settings', 'help'\]/.test(navMenuBody) && (navMenuBody.match(/t\(`nav\.\$\{page\}`\)/) || []).length > 0,
+  `${(navMenuBody.match(/type: 'radio'/g) || []).length} entree(s) marquee(s)`);
+check('le menu garde les rubriques de lapplication', /\.\.\.appMenuTemplate\(\)/.test(navMenuBody));
+
+// Le pont contextBridge est gele : window.hub ne peut pas etre piege depuis la
+// page, et le popup est natif - il n'existe aucun observateur cote renderer. Ce
+// que ce test peut donc prouver est limite aux trois maillons visibles : le canal
+// est declare dans le preload, la fonction arrive jusqu'a nous, le clic part.
+const preloadSource = readFileSync(new URL('../preload.js', import.meta.url), 'utf8');
+check('le pont expose navMenu sur son canal',
+  /navMenu:\s*\(rect\)\s*=>\s*ipcRenderer\.send\('hub:nav-menu',\s*rect\)/.test(preloadSource));
+check("l'icone appelle le pont au clic", await evalJs(
+  `typeof window.hub.navMenu === 'function' && document.getElementById('rail-logo').dataset.wired === '1'`
+));
+await click('#rail-logo');
+await sleep(150);
+check("l'icone se dit menu ouvert", await evalJs(
+  `document.getElementById('rail-logo').getAttribute('aria-expanded') === 'true'`
+));
 
 // Point de depart deterministe : `lastPage` est persiste (rouvrir les reglages la
-// ou on les a laisses est un reglage voulu), donc un test qui cliquerait "Reglages"
-// sans remettre a zero se retrouverait a les REFERMER.
+// ou on les a laisses est un reglage voulu), donc un test qui ouvrait une page sans
+// remettre a zero se retrouverait a la REFERMER.
 await evalJs(`window.hub.setPage(null)`);
 await sleep(400);
 
-await click('#sidebar-nav [data-page="home"]');
+await evalJs(`window.hub.setPage('home')`);
 await sleep(600);
-check("le clic sur Accueil ouvre l'accueil", await evalJs(
+check("l'entree Accueil du menu ouvre l'accueil", await evalJs(
   `!document.getElementById('page-root').hidden && document.querySelector('.page-head h1')?.textContent.length > 0`
 ));
-check("l'entree cliquee est marquee courante", await evalJs(
-  `document.querySelector('#sidebar-nav [data-page="home"]').getAttribute('aria-current') === 'page'`
+check("l'entree unique porte le temoin de page ouverte", await evalJs(
+  `document.getElementById('rail-logo').getAttribute('aria-current') === 'page' && document.getElementById('rail-logo').getAttribute('data-page-open') === 'home'`
 ));
-await click('#sidebar-nav [data-page="home"]');
-await sleep(500);
-check('un second clic sur la meme entree referme la page', await evalJs(`document.getElementById('page-root').hidden`));
+check('le sous-titre de la page est traduit', await evalJs(
+  `(() => { const t = document.querySelector('.page-head p')?.textContent || ''; return t.length > 8 && !/^[a-z0-9_]+\\.[a-z0-9_.]+$/i.test(t) })()`
+), await evalJs(`document.querySelector('.page-head p')?.textContent`));
 
 await evalJs(`window.hub.setPage('settings')`);
 await sleep(600);
 check('#page-root affiche quand une page est ouverte', await evalJs(`!document.getElementById('page-root').hidden`));
+// Le reglages.subtitle etait passe sous le nez des trois fichiers de langue : la
+// cle s'affichait telle quelle dans l'en-tete. Toute page doit montrer une phrase.
+check("l'en-tete des reglages a un sous-titre traduit", await evalJs(
+  `(() => { const t = document.querySelector('.page-head p')?.textContent || ''; return t.length > 8 && !/^[a-z0-9_]+\\.[a-z0-9_.]+$/i.test(t) })()`
+), await evalJs(`document.querySelector('.page-head p')?.textContent`));
 check('sept rubriques de reglages', (await count('.settings-nav button')) === 7, `${await count('.settings-nav button')}`);
 check('les rangees de reglages sont rendues', (await count('.setting-row')) > 3, `${await count('.setting-row')}`);
 
@@ -234,7 +289,7 @@ await evalJs(`window.hub.setPage(null)`);
 await sleep(400);
 check('#page-root est referme', await evalJs(`document.getElementById('page-root').hidden`));
 check('la navigation n\u2019est plus marquee', await evalJs(
-  `!document.querySelector('#sidebar-nav [aria-current]')`
+  `!document.querySelector('#rail-logo[aria-current]') && !document.querySelector('#rail-logo[data-page-open]')`
 ));
 
 // ---------------------------------------------------------------------------

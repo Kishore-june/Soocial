@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Variante preparee pour le 16px : la vignette et la bulle, rien d'autre.
+  A cette taille, la bulle de fond semi-transparente et les trois points ne
+  survivent pas a l'anticrepassage - ils brouillent la silhouette. Les retirer
+  rend l'icone plus lisible dans la barre des taches et dans l'alternance de
+  fenetres ; le fichier maitre (soocial-app-icon.svg) garde les details des 32 px.
+
+  Cet ecart est assume, pas un oubli : make-icons.sh prend ce fichier pour les
+  frames 16 et 24 du .ico et le maitre a partir de 32.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Soocial">
+  <title>Soocial - icone 16px</title>
+  <rect x="16" y="16" width="480" height="480" rx="116" fill="url(#tile)"/>
+  <rect x="18" y="18" width="476" height="476" rx="114" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="6"/>
+  <g fill="#ffffff">
+    <rect x="76" y="168" width="304" height="208" rx="78"/>
+    <path d="M152 356l-50 84q-8 14 8 9l92-26z"/>
+  </g>
+  <defs>
+    <linearGradient id="tile" x1="96" y1="16" x2="416" y2="496" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7c5cff"/>
+      <stop offset="0.5" stop-color="#4a4fd0"/>
+      <stop offset="1" stop-color="#28306e"/>
+    </linearGradient>
+  </defs>
+</svg>

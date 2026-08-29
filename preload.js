@@ -150,6 +150,13 @@ contextBridge.exposeInMainWorld('hub', {
   setPage: (page) => ipcRenderer.send('hub:page', page),
   onPage: (callback) => on('hub:page', callback),
 
+  /**
+   * Ouvre le menu de navigation sous l'icone de la barre laterale. { x, y } est
+   * le coin haut-gauche du bouton, en coordonnees de contenu : le main connait
+   * seul la position a l'ecran d'un popup, et la liste de ses entrées.
+   */
+  navMenu: (rect) => ipcRenderer.send('hub:nav-menu', rect),
+
   /** Instantane des reglages, du stockage et de l'installation. */
   settings: () => ipcRenderer.invoke('hub:settings-get'),
 

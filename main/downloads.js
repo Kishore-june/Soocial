@@ -76,11 +76,27 @@ function planDownload(input) {
 
 function usableDir(dir, probe) {
   if (!dir) return null;
-  if (probe) return probe.ok ? dir : null;
+  if (probe) return storage.isUsableProbe(probe) ? dir : null;
   // Sans sonde, on suppose que l'ecriture passera et on laisse l'erreur
   // remonter a Chromium : mieux vaut un echec honnete qu'un refus preventif.
   return storage.driveAvailable(dir) ? dir : null;
 }
+
+/**
+ * Le nom dans le dossier ou l'on ecrit vraiment, pas dans celui qu'on a demande.
+ *
+ * Un plan bascule sur le repli quand la cible est hors d'atteinte, mais le nom,
+ * lui, a ete compare aux fichiers de la cible : le garder tel quel reviendrait a
+ * ecraser un fichier du dossier par defaut. Numeroter ici, et seulement ici, est
+ * ce qui rend le "renomme" affiche plus bas honnete.
+ */
+function resolveName(plan, namesInTarget) {
+  if (!plan || !plan.usedFallback || !plan.dir) return plan ? plan.name : '';
+  const ext = path.extname(plan.name);
+  const stem = ext ? plan.name.slice(0, -ext.length) : plan.name;
+  return rules.uniqueFileName(stem, ext, namesInTarget || []);
+}
+
 
 function listNames(dir) {
   try {
@@ -117,7 +133,15 @@ function attach({ sessions, getContext, log = () => {}, notify = () => {}, t = (
         suggested: item.getFilename(),
         askWhere: Boolean(context.askWhere),
         existing: listNames(context.downloadsDir),
-        probe: storage.probeDirectory(context.downloadsDir),
+        // Le dossier demande est cree s'il manque : "il n'existe pas encore" est
+        // l'etat d'une premiere utilisation, pas un motif de repli - et le cahier
+        // des charges demande la creation a la volee. Un lecteur parti repond
+        // quand meme DRIVE_UNAVAILABLE (le mkdir echoue), donc le repli et son
+        // message gardent leur sens.
+        // L'ordre est porteur : creer avant de planifier, parce qu'on va pointer
+        // Chromium sur ce dossier et qu'on ne lui demande pas d'inventer un
+        // repertoire au moment d'ecrire.
+        probe: storage.probeDirectory(context.downloadsDir, { create: true }),
         defaultProbe: storage.probeDirectory(context.defaultDir, { create: true }),
       });
 
@@ -137,6 +161,14 @@ function attach({ sessions, getContext, log = () => {}, notify = () => {}, t = (
         item.cancel();
         notify(t('download.failedTitle'), t(plan.reasonKey || 'path.error.noPermission'), { serviceId });
         return;
+      }
+
+      // Le nom a ete compare aux fichiers du dossier demande ; un plan qui a
+      // bascule sur le repli ecrit ailleurs, ou le meme nom est peut-etre pris.
+      const finalName = resolveName(plan, listNames(plan.dir));
+      if (finalName !== plan.name) {
+        plan.name = finalName;
+        plan.renamed = true;
       }
 
       const target = path.join(plan.dir, plan.name);
@@ -187,4 +219,4 @@ function askWhere(item, plan, { dialog, log, notify, t, serviceId }) {
     });
 }
 
-module.exports = { planDownload, attach, listNames, usableDir };
+module.exports = { planDownload, resolveName, attach, listNames, usableDir };

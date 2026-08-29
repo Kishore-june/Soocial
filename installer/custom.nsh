@@ -669,7 +669,17 @@
     # NSIS 3 n'a plus de LogFile : en mode silencieux, LogSet ecrit sur la sortie
     # standard, que `Setup.exe /S > journal.txt` capture. C'est ce que fait le test
     # d'installation sous wine, et ce que l'on demande dans un rapport distant.
-    ; LogSet on
+    #
+    # L'instruction reste toutefois facultative a la compilation : un makensis
+    # construit sans NSIS_CONFIG_LOG (le paquet systeme de beaucoup de
+    # distributions) la refuse par une erreur, alors que le makensis telecharge par
+    # electron-builder l'accepte. Le harnais de test passe -DSOO_NO_LOGSET quand sa
+    # sonde le dit ; la production, elle, compile toujours la ligne.
+!ifdef SOO_NO_LOGSET
+    DetailPrint "Soocial: journal de diagnostic demande (makensis sans NSIS_CONFIG_LOG)"
+!else
+    LogSet on
+!endif
     DetailPrint "Soocial: journal de diagnostic active ($EXEDIR)"
   ${EndUnless}
   ClearErrors

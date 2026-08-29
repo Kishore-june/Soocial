@@ -25,10 +25,17 @@ const TITLEBAR_HEIGHT = 40;
 /** Bande laissee libre entre les deux vues en mode partage, saisie a la souris. */
 const SPLIT_GAP = 6;
 
-/** Petit coin : la zone ou les trois boutons mac sont cliquables. */
-const WINDOW_BUTTON_SIZE = 24;
-const WINDOW_BUTTON_GAP = 8;
+/**
+ * Petit coin : les trois pastilles mac. Elles mesurent 15 px et leur glyphe 8 px,
+ * parce qu'a 24 px elles attiraient l'oeil plus que le titre de la fenetre, alors
+ * qu'on ne les regarde que pour les retrouver. La zone cliquable reste plus large
+ * que la pastille : le renderer l'etend de la moitie du pas entre deux boutons
+ * (--window-button-gap / -2), donc les trois cibles se touchent sans se chevaucher.
+ */
+const WINDOW_BUTTON_SIZE = 15;
+const WINDOW_BUTTON_GAP = 10;
 const WINDOW_BUTTON_INSET = 12;
+const WINDOW_GLYPH_SIZE = 8;
 
 const METRICS = {
   SIDEBAR_WIDTH,
@@ -38,6 +45,7 @@ const METRICS = {
   WINDOW_BUTTON_SIZE,
   WINDOW_BUTTON_GAP,
   WINDOW_BUTTON_INSET,
+  WINDOW_GLYPH_SIZE,
 };
 
 /** Payload envoye au renderer (et pose en variables CSS) a chaque bootstrap. */

@@ -5,7 +5,16 @@
    (La largeur de barre laterale non plus n'est plus un chiffre ici : elle arrive
    de shared/layout-metrics.js via bootstrap, pose en variable CSS par sidebar.js.) */
 :root {
-  --avatar-size: 48px;
+  /* Tuile de service : 30 px. A 48 px dans une barre de 72 px, il restait moins
+     d'air autour d'une icone qu'entre deux lettres d'un mot, et la liste tenait
+     a peine dix services a l'ecran. Tout ce qui mesure la tuile (l'avatar, la
+     pastille, le repere de volume) se regle sur ce jeton. */
+  --avatar-size: 30px;
+  --tile-height: 40px;
+  --tile-radius: 9px;
+  /* Le carre des commandes du bas et l'entree du menu en haut sont du meme module :
+     une barre laterale se lit comme une colonne de carres egaux. */
+  --rail-box: 34px;
   --sidebar-bg: rgba(30, 30, 46, 0.72);
   --content-bg: var(--bg-gradient-b);
   --surface: var(--surface-solid);
@@ -83,49 +92,76 @@ html[data-glass='off'] #sidebar {
   -webkit-backdrop-filter: none;
 }
 
-/* --- navigation : accueil, favoris, reglages, aide --- */
-#sidebar-nav {
+/* --- entree du menu : l'icone du logiciel, un seul point d'acces ---
+   Les quatre destinations (accueil, favoris, reglages, aide) sont dans le menu
+   natif que ce bouton fait apparaitre. Quatre boutons de plus dans une barre de
+   72 px ne demandaient que de la place ; l'icone, elle, sert deja a reconnaitre
+   la fenetre - c'est donc elle qui ouvre la liste. */
+#sidebar-top {
+  width: 100%;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  justify-content: center;
   padding-bottom: 8px;
   margin-bottom: 6px;
   border-bottom: 1px solid var(--hairline);
-  width: 100%;
 }
 
-.nav-item {
-  width: 44px;
-  height: 36px;
+.rail-logo {
+  position: relative;
+  width: var(--rail-box);
+  height: var(--rail-box);
   display: grid;
   place-items: center;
+  padding: 0;
   border: 0;
   border-radius: var(--radius-md);
   background: transparent;
-  color: var(--text-dim);
   cursor: default;
-  transition: background var(--duration) var(--ease), color var(--duration) var(--ease);
+  transition: background var(--duration) var(--ease);
 }
 
-.nav-item svg {
-  width: 20px;
-  height: 20px;
+.rail-logo svg {
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  display: block;
+  border-radius: var(--tile-radius);
+  transition: transform var(--duration) var(--ease), filter var(--duration) var(--ease);
 }
 
-.nav-item:hover {
+.rail-logo:hover {
   background: var(--surface-raised);
-  color: var(--text);
 }
 
-.nav-item[aria-current='page'] {
-  background: var(--accent);
-  color: var(--accent-ink);
+.rail-logo:hover svg {
+  filter: brightness(1.1);
+  transform: scale(1.06);
 }
 
-.nav-item:focus-visible {
+.rail-logo:active svg {
+  transform: scale(0.94);
+}
+
+.rail-logo[aria-expanded='true'] {
+  background: var(--surface-raised);
+}
+
+.rail-logo:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 1px;
+}
+
+/* Temoignage qu'une page est devant : un point sous l'icone. Une pastille
+   d'accent complete aurait competition avec les pastilles de messages non lus. */
+.rail-logo[data-page-open]::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -3px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--accent);
 }
 
 /* Repliee : la liste des services ne change pas de taille (les icones sont deja
@@ -140,7 +176,7 @@ html[data-sidebar-collapsed='true'] .service-label {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 2px;
   overflow-y: auto;
   scrollbar-width: none;
 }
@@ -161,7 +197,7 @@ html[data-sidebar-collapsed='true'] .service-label {
 .service {
   position: relative;
   width: 100%;
-  height: 56px;
+  height: var(--tile-height);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -186,11 +222,11 @@ html[data-sidebar-collapsed='true'] .service-label {
 }
 
 .service:hover::before {
-  height: 18px;
+  height: 14px;
 }
 
 .service.active::before {
-  height: 32px;
+  height: 22px;
 }
 
 .avatar {
@@ -200,9 +236,9 @@ html[data-sidebar-collapsed='true'] .service-label {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.1px;
   color: #fff;
   background: var(--service-color, #45475a);
   opacity: 0.8;
@@ -216,7 +252,7 @@ html[data-sidebar-collapsed='true'] .service-label {
    rondes ne le voient pas, leurs angles etant transparents. */
 .service.has-icon .avatar {
   background: none;
-  border-radius: 14px;
+  border-radius: var(--tile-radius);
 }
 
 .avatar img {
@@ -263,7 +299,7 @@ html[data-sidebar-collapsed='true'] .service-label {
   opacity: 0.7;
 }
 
-/* Vue partagee : le service affiche dans la moitie droite porte un liseré */
+/* Vue partagee : le service affiche dans la moitie droite porte un lisere */
 .service.split .avatar {
   box-shadow: 0 0 0 2px var(--accent);
   opacity: 1;
@@ -281,18 +317,18 @@ html[data-sidebar-collapsed='true'] .service-label {
 /* Badge de notifications non lues */
 .badge {
   position: absolute;
-  top: 1px;
-  right: 4px;
-  min-width: 19px;
-  height: 19px;
-  padding: 0 5px;
-  border-radius: 10px;
+  top: 0;
+  right: 6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
   background: var(--badge);
   border: 2px solid var(--sidebar-bg);
   color: #fff;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
-  line-height: 15px;
+  line-height: 12px;
   text-align: center;
   display: none;
 }
@@ -303,28 +339,30 @@ html[data-sidebar-collapsed='true'] .service-label {
 
 /* Non-lus sans compteur (Discord affiche parfois juste un point) */
 .badge.dot {
-  min-width: 12px;
-  width: 12px;
-  height: 12px;
+  min-width: 9px;
+  width: 9px;
+  height: 9px;
   padding: 0;
   top: 5px;
   right: 8px;
 }
 
 /* Pastille d'initiales : uniquement sur les icones automatiques (favicon), la
-   ou deux services peuvent etre indiscernables. */
+   ou deux services peuvent etre indiscernables. Elle se colle dans le gutter de
+   gauche et ne chevauche l'icone que de son rayon : a 30 px, une vignette
+   recouverte a moitie n'est plus reconnue par sa forme. */
 .chip {
   position: absolute;
-  bottom: 1px;
-  left: 8px;
-  height: 14px;
-  padding: 0 4px;
-  border-radius: 7px;
+  bottom: 3px;
+  left: 1px;
+  height: 12px;
+  padding: 0 3px;
+  border-radius: 6px;
   background: var(--service-color, #45475a);
   color: #fff;
-  font-size: 8px;
+  font-size: 7px;
   font-weight: 700;
-  line-height: 14px;
+  line-height: 12px;
   letter-spacing: 0.2px;
   display: none;
 }
@@ -336,14 +374,14 @@ html[data-sidebar-collapsed='true'] .service-label {
 /* Boutons du bas : ajouter un service, installer une mise a jour */
 .action {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: var(--rail-box);
+  height: var(--rail-box);
   flex-shrink: 0;
   border: 1px dashed var(--divider);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: none;
   color: var(--text-dim);
-  font-size: 20px;
+  font-size: 17px;
   line-height: 1;
   cursor: pointer;
   transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
@@ -1476,8 +1514,8 @@ input[type="color"] {
 }
 
 .action svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   display: block;
   margin: 0 auto;
 }
@@ -1494,12 +1532,12 @@ input[type="color"] {
   transform: translate(-50%, -50%);
   width: var(--avatar-size);
   height: var(--avatar-size);
-  border-radius: 13px;
+  border-radius: var(--tile-radius);
   background: rgba(24, 24, 37, 0.92);
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
   display: none;
   pointer-events: none;
 }

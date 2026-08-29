@@ -478,9 +478,13 @@
       row({
         title: tr('storage.downloads', 'Dossier de telechargement'),
         hint: tr('storage.downloadsHint', 'Separe du dossier d\u2019installation : une mise a jour qui remplace le dossier applicatif ne doit jamais emporter vos fichiers.'),
-        value: pathCell(storage.downloads, storage.downloadsOk
-          ? { text: tr('storage.writable', 'accessible en ecriture'), kind: 'ok' }
-          : { text: tr('storage.unwritable', 'inaccessible - les telechargements sont suspendus'), kind: 'error' }),
+        value: pathCell(storage.downloads, storage.downloadsWillCreate
+          // Le troisieme etat, celui d'une premiere utilisation : ni vert ni rouge.
+          // Un rouge sur un dossier simplement absent apprend a ignorer les rouges.
+          ? { text: tr('storage.downloadsWillCreate', 'sera cree au premier telechargement'), kind: 'info' }
+          : storage.downloadsOk
+            ? { text: tr('storage.writable', 'accessible en ecriture'), kind: 'ok' }
+            : { text: tr('storage.unwritable', 'inaccessible - les telechargements sont suspendus'), kind: 'error' }),
         actions: el(
           'span',
           {},
@@ -492,7 +496,13 @@
           }),
           button(tr('storage.check', 'Verifier'), async () => {
             const info = await hub.verifyStorage();
-            flash(root, info?.downloadsOk ? tr('storage.ok', 'Dossier accessible') : tr('storage.notOk', 'Dossier inaccessible'), info?.downloadsOk ? 'ok' : 'error');
+            const tone = info?.downloadsWillCreate ? 'info' : info?.downloadsOk ? 'ok' : 'error';
+            const message = info?.downloadsWillCreate
+              ? tr('storage.downloadsWillCreate', 'sera cree au premier telechargement')
+              : info?.downloadsOk
+                ? tr('storage.ok', 'Dossier accessible')
+                : tr('storage.notOk', 'Dossier inaccessible');
+            flash(root, message, tone);
             refresh();
           }),
           storage.downloadsIsDefault
@@ -736,6 +746,7 @@
     html.style.setProperty('--window-button-size', px(metrics.WINDOW_BUTTON_SIZE));
     html.style.setProperty('--window-button-gap', px(metrics.WINDOW_BUTTON_GAP));
     html.style.setProperty('--window-button-inset', px(metrics.WINDOW_BUTTON_INSET));
+    html.style.setProperty('--window-glyph-size', px(metrics.WINDOW_GLYPH_SIZE));
   }
 
   function applySettings(next) {
@@ -760,7 +771,14 @@
     else root.replaceChildren();
     root.hidden = !current;
     markCurrentPage();
-    document.getElementById('sidebar-nav')?.toggleAttribute('data-page-open', Boolean(current));
+    // L'entree unique du menu porte le temoin : un point sous l'icone quand une
+    // page est devant. Les quatre boutons d'avant n'en avaient pas besoin, chacun
+    // etait deja sa propre rubrique.
+    const logo = document.getElementById('rail-logo');
+    if (logo) {
+      if (current) logo.setAttribute('data-page-open', current);
+      else logo.removeAttribute('data-page-open');
+    }
   }
 
   function refresh() {
@@ -768,27 +786,36 @@
   }
 
   /**
-   * Les quatre boutons du haut de la barre laterale. Ils sont cables ici et non
-   * dans sidebar.js parce qu'ils changent de libelle avec la page ouverte : la
-   * source de verite de "quelle page est devant" est ce module.
+   * L'icone du logiciel, en haut de la barre laterale : l'entree unique du menu
+   * qui contient les quatre pages. Cable ici et non dans sidebar.js parce que
+   * l'etat "page devant" est connu de ce module seul.
    */
   function wireSidebarNav() {
-    const nav = document.getElementById('sidebar-nav');
-    if (!nav || nav.dataset.wired) return;
-    nav.dataset.wired = '1';
-    nav.addEventListener('click', (event) => {
-      const item = event.target.closest('[data-page]');
-      if (!item) return;
-      const page = item.dataset.page;
-      hub.setPage(page === current ? null : page);
+    const logo = document.getElementById('rail-logo');
+    if (!logo || logo.dataset.wired) return;
+    logo.dataset.wired = '1';
+    logo.addEventListener('click', () => {
+      const box = logo.getBoundingClientRect();
+      logo.setAttribute('aria-expanded', 'true');
+      hub.navMenu({ x: Math.round(box.left), y: Math.round(box.bottom) });
+    });
+    // Le popup est natif : le renderer ne le voit pas se fermer. Le premier
+    // evenement qui le suit (perte de focus, clic ailleurs) sert donc d'indication
+    // ; un etat laisse a true une seconde de plus ne coute qu'un surbrillage.
+    const close = () => logo.removeAttribute('aria-expanded');
+    window.addEventListener('blur', close);
+    window.addEventListener('pointerdown', (event) => {
+      if (!event.target.closest('#rail-logo')) close();
     });
   }
 
   function markCurrentPage() {
-    for (const item of document.querySelectorAll('#sidebar-nav [data-page]')) {
-      if (item.dataset.page === current) item.setAttribute('aria-current', 'page');
-      else item.removeAttribute('aria-current');
-    }
+    // Le menu natif marque la page ouverte de lui-meme, il est reconstruit a
+    // chaque ouverture. Le DOM n'a plus qu'a signaler que l'icone mene quelque part.
+    const logo = document.getElementById('rail-logo');
+    if (!logo) return;
+    if (current) logo.setAttribute('aria-current', 'page');
+    else logo.removeAttribute('aria-current');
   }
 
   function setServices(next) {

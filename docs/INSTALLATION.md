@@ -22,6 +22,14 @@ Two rules govern the whole feature:
 | HTTP cache, GPU cache | `%LOCALAPPDATA%\Soocial` | no |
 | Downloads | the folder you pick in Settings > Storage, default `%USERPROFILE%\Downloads\Soocial` | no |
 
+The downloads folder is created when it is needed, not when it is chosen: a
+first run has no `%USERPROFILE%\Downloads\Soocial`, and that is a normal state,
+not a problem. Settings > Storage says *"will be created on the first download"*.
+A red note there means something you can act on — a drive that is gone, a folder
+that refuses writes — because "missing" alone is never an error. Changing the
+folder never moves or deletes anything: it only decides where the next file
+goes, and an existing file is never overwritten (you get `report (2).pdf`).
+
 Keeping data outside the install dir is what makes an uninstall non-destructive
 and an update cheap. It also means two installs on the same machine (one on
 `C:`, one on `D:`) do not share sessions by accident, and that a custom path

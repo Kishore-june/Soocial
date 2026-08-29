@@ -56,10 +56,67 @@ function resolveRoots(env = process.env, platform = process.platform) {
   };
 }
 
+/**
+ * Où la politique de chemin s'applique.
+ *
+ * `shared/path-rules` est ecrit pour Windows : separateurs inverse, lecteur
+ * obligatoire, noms reserves, MAX_PATH de 259. C'est l'autorite pour
+ * l'installateur et pour l'app installee. Mais la meme app se lance sur le poste
+ * de developpement Linux, ou cette forme rejette chaque chemin reel — et la page
+ * Stockage sortirait en rouge un reglage parfaitement valide, avec un
+ * telechargement refuse pour une raison que personne ne peut reparer.
+ *
+ * Ce qui est verifie ici, "le dossier existe-t-il et ecrit-on dedans", a le meme
+ * sens sur les deux systemes : seule la partie forme est branchee.
+ */
+const shapedForWindows = process.platform === 'win32';
+
+/** Le chemin tel qu'on le compare au disque. Vide si l'entree est vide. */
+function shapePath(dir) {
+  const text = typeof dir === 'string' ? dir.trim() : '';
+  if (!text) return '';
+  // Surtout ne pas resoudre un chemin relatif contre le repertoire courant : le
+  // refus "ce chemin n'est pas absolu" est la reponse attendue, ici comme sous
+  // Windows. Resoudre, ce serait creer un dossier la ou personne n'a rien demande.
+  if (shapedForWindows) return rules.normalize(text);
+  return path.isAbsolute(text) ? path.normalize(text) : text;
+}
+
+/** Absolute au sens du systeme courant (au sens de Windows ailleurs). */
+function shapeAbsolute(resolved) {
+  return shapedForWindows ? rules.isAbsolute(resolved) : path.isAbsolute(resolved);
+}
+
+/** Le dossier qui contient, ou '' quand il n'y a rien au-dessus. */
+function shapeParent(resolved) {
+  if (!shapedForWindows) {
+    const up = path.dirname(resolved);
+    return up && up !== resolved ? up : '';
+  }
+  return rules.parentOf(resolved);
+}
+
+/** Le volume a tester (lettre de lecteur ailleurs, rien sur un chemin natif). */
+function shapeVolume(resolved) {
+  return shapedForWindows ? rules.driveOf(resolved) : '';
+}
+
+/** Les avis sur la forme du chemin : les regles Windows n'existent pas ailleurs. */
+function shapeIssues(resolved) {
+  if (!shapedForWindows) return [];
+  return rules.validatePath(resolved).issues;
+}
+
 /** Le dossier de destination existe-t-il, est-ce un dossier, ecrit-on dedans ? */
 function probeDirectory(dir, { create = false } = {}) {
-  const resolved = rules.normalize(dir);
-  const shape = rules.validatePath(resolved);
+  const resolved = shapePath(dir);
+  // Hors Windows, la forme n'est pas verifiee par les regles du produit : le
+  // minimum qui empeche d'ecrire n'importe ou reste "absolu", meme verdict que
+  // NOT_ABSOLUTE cote Windows.
+  if (!shapedForWindows && resolved && !shapeAbsolute(resolved)) {
+    return { ok: false, code: 'NOT_ABSOLUTE', path: resolved };
+  }
+  const shape = { ok: true, issues: shapeIssues(resolved) };
   if (!shape.ok) {
     const blocking = shape.issues.find((issue) => issue.code !== 'LONG_PATH');
     return { ok: false, code: blocking ? blocking.code : 'LONG_PATH', path: resolved, issues: shape.issues };
@@ -84,7 +141,17 @@ function probeDirectory(dir, { create = false } = {}) {
 
   if (!facts.exists) {
     if (!create) {
-      return { ok: false, code: 'MISSING_DIRECTORY', path: resolved, parent: rules.parentOf(resolved) };
+      // "Le dossier n'existe pas" n'est pas un etat d'erreur quand un ancetre
+      // s'ecrit : c'est un dossier par defaut jamais utilise. Le tester est le
+      // seul moyen de le savoir, access(W_OK) mentant aussi bien sur un point de
+      // montage ejecte que sur un dossier en lecture seule.
+      return {
+        ok: false,
+        code: 'MISSING_DIRECTORY',
+        path: resolved,
+        parent: shapeParent(resolved),
+        creatable: firstWritableAncestor(resolved),
+      };
     }
     try {
       fs.mkdirSync(resolved, { recursive: true });
@@ -102,6 +169,36 @@ function probeDirectory(dir, { create = false } = {}) {
   if (!writable.ok) return { ok: false, code: writable.code, path: resolved };
 
   return { ok: true, path: resolved, created: facts.created };
+}
+
+/**
+ * Le dossier vise n'existe pas : est-ce qu'un de ses ancetres accepterait qu'on
+ * le cree ? On remonte jusqu'au premier existant - un chemin comme
+ * E:\a\b\Soocial se joue sur E:\, pas sur le parent immediat, qui n'existe pas
+ * non plus. Huit montees suffisent la ou Windows autorise d'ecrire (une lettre
+ * de lecteur est a deux niveaux de la racine) ; au-dela, on considere que non.
+ */
+function firstWritableAncestor(dir) {
+  let current = shapeParent(dir);
+  for (let depth = 0; current && depth < 8; depth += 1) {
+    if (fs.existsSync(current)) return testWrite(current).ok;
+    const up = shapeParent(current);
+    if (!up || up === current) break;
+    current = up;
+  }
+  return false;
+}
+
+/**
+ * Un dossier est exploitable s'il est ecrivable, ou s'il n'existe pas encore mais
+ * qu'un ancetre s'ecrit : c'est l'etat d'un dossier par defaut jamais utilise, pas
+ * une panne. La regle vit ici, une seule fois, pour que la page Stockage et le
+ * chemin d'un telechargement ne puissent pas se contredire.
+ */
+function isUsableProbe(probe) {
+  if (!probe) return true; // pas de sonde : on laisse l'erreur remonter a Chromium
+  if (probe.ok) return true;
+  return probe.code === 'MISSING_DIRECTORY' && probe.creatable === true;
 }
 
 /**
@@ -135,7 +232,7 @@ function driveErrorCode(err) {
 
 /** Lecteur branche ? (D:\ retire, cle USB ejetee, disque reseau deconnecte.) */
 function driveAvailable(dir) {
-  const drive = rules.driveOf(dir);
+  const drive = shapeVolume(dir);
   if (!drive) return true; // UNC ou simulateur : on n'a pas de test fiable, on laisse ecrire et on interprete l'erreur.
   try {
     fs.accessSync(`${drive}\\`);
@@ -154,8 +251,8 @@ function driveAvailable(dir) {
 function describe({ store, roots }) {
   const stored = store.get('downloads');
   const isDefault = !stored || !String(stored).trim();
-  const active = isDefault ? roots.downloadsDefault : rules.normalize(stored);
-  const drive = rules.driveOf(active);
+  const active = isDefault ? roots.downloadsDefault : shapePath(stored);
+  const drive = shapeVolume(active);
 
   return {
     data: roots.data,
@@ -164,21 +261,63 @@ function describe({ store, roots }) {
     downloadsIsDefault: isDefault,
     downloadsDrive: drive || null,
     ...finalizeProbe(probeDirectory(active)),
-    warnings: rules.validatePath(active).issues.map((issue) => issue.code),
+    warnings: shapeIssues(active).map((issue) => issue.code),
   };
 }
 
+/** Refus qui n'ont jamais touche le disque : on ne peut rien dire du dossier. */
+const NEVER_ON_DISK = new Set([
+  'EMPTY',
+  'NOT_ABSOLUTE',
+  'INVALID_CHARS',
+  'INVALID_NAME',
+  'TOO_LONG',
+  'LONG_PATH',
+  'MISSING_DIRECTORY',
+  'DRIVE_UNAVAILABLE',
+]);
+
+/**
+ * Traduction du sondage pour la page Stockage et pour les telechargements.
+ *
+ * Trois etats, et pas deux : accessible, absent mais creatible, inaccessible.
+ * Le deuxieme est le cas de toute premiere utilisation - le dossier par defaut
+ * n'a aucune raison d'exister avant le premier fichier recu, et l'afficher en
+ * rouge apprend a l'utilisateur a ignorer les messages rouges. Le troisieme
+ * garde sa severite : un dossier refuse, ce n'est pas un dossier vierge.
+ *
+ * `downloadsOk` repond a la seule question qui bloque un telechargement : va-t-on
+ * pouvoir ecrire ici. Un dossier qui reste a creer y repond oui, parce que la
+ * creation fait partie du contrat (voir le cahier des charges, "create if
+ * missing") et que downloads.js cree effectivement au moment d'ecrire.
+ */
 function finalizeProbe(probe) {
-  if (!probe.ok) {
+  // Un dossier absent mais creable est "correct, en attente" ; le reste du module
+  // (usableDir, donc les telechargements) prend la meme decision au meme endroit.
+  const willCreate = !probe.ok && probe.code === 'MISSING_DIRECTORY' && probe.creatable === true;
+  if (probe.ok || willCreate) {
     return {
-      downloadsOk: false,
-      downloadsExists: probe.code !== 'MISSING_DIRECTORY' && probe.code !== 'DRIVE_UNAVAILABLE',
-      downloadsWritable: false,
-      downloadsErrorCode: probe.code,
-      downloadsErrorKey: rules.errorKeyFor(probe.code),
+      downloadsOk: true,
+      downloadsExists: probe.ok,
+      downloadsWritable: true,
+      downloadsWillCreate: willCreate,
+      downloadsErrorCode: null,
+      downloadsErrorKey: null,
     };
   }
-  return { downloadsOk: true, downloadsExists: true, downloadsWritable: true, downloadsErrorCode: null, downloadsErrorKey: null };
+  // Absent et impossible a creer : ce que l'utilisateur peut comprendre, c'est
+  // qu'il n'a pas le droit d'ecrire a cet endroit - pas un code interne.
+  const code = probe.code === 'MISSING_DIRECTORY' ? 'NO_PERMISSION' : probe.code;
+  return {
+    downloadsOk: false,
+    // "Existe" ne veut rien dire quand le chemin n'a jamais atteint le disque :
+    // un refus de forme ou un lecteur absent doivent rester "rien la-dessous".
+    downloadsExists: !NEVER_ON_DISK.has(probe.code),
+    downloadsWritable: false,
+    downloadsWillCreate: false,
+    downloadsErrorCode: code,
+    downloadsErrorKey: rules.errorKeyFor(code),
+  };
 }
 
 /**
@@ -188,12 +327,14 @@ function finalizeProbe(probe) {
  * suivant le rappelle.
  */
 function setDownloadsDir({ store, roots, candidate, create = true }) {
-  const normalized = rules.normalize(candidate);
+  const normalized = shapePath(candidate);
   if (!normalized) return { ok: false, code: 'EMPTY', errorKey: rules.errorKeyFor('EMPTY') };
 
-  if (!rules.isAbsolute(normalized)) return { ok: false, code: 'NOT_ABSOLUTE', errorKey: rules.errorKeyFor('NOT_ABSOLUTE') };
+  if (!shapeAbsolute(normalized)) return { ok: false, code: 'NOT_ABSOLUTE', errorKey: rules.errorKeyFor('NOT_ABSOLUTE') };
 
-  if (normalized.includes('\\*') || normalized.includes('?') || normalized.includes('"')) {
+  // Les caracteres refusent un nom de fichier seulement sur les systemes qui les
+  // reservent ; sur le poste de developpement, un blanc ne justifie pas un refus.
+  if (shapedForWindows && (normalized.includes('\\*') || normalized.includes('?') || normalized.includes('"'))) {
     return { ok: false, code: 'INVALID_CHARS', errorKey: rules.errorKeyFor('INVALID_CHARS') };
   }
 
@@ -268,8 +409,11 @@ module.exports = {
   probeDirectory,
   testWrite,
   driveAvailable,
+  isUsableProbe,
   driveErrorCode,
   describe,
+  finalizeProbe,
+  firstWritableAncestor,
   setDownloadsDir,
   resetDownloadsDir,
   resolveDownloadPath,

@@ -24,6 +24,11 @@
   --titlebar-height: 40px;
   --split-gap: 6px;
 
+  /* Les dimensions des controles de fenetre ne sont pas ici : elles viennent de
+     shared/layout-metrics.js et sont posees sur <html> par le renderer. Les
+     reglages ci-dessous ne sont que des valeurs de repli, pour la fraction de
+     seconde ou le CSS est applique avant le bootstrap. */
+
   /* --- rythme ---------------------------------------------------------------- */
   --space-1: 4px;
   --space-2: 8px;
@@ -224,7 +229,7 @@ html[data-glass='off'] #sidebar {
 .titlebar-controls {
   display: flex;
   align-items: center;
-  gap: var(--window-button-gap, 8px);
+  gap: var(--window-button-gap, 10px);
   -webkit-app-region: no-drag;
 }
 
@@ -232,8 +237,9 @@ html[data-glass='off'] #sidebar {
    font les boutons Windows : reduire, agrandir/reduire, fermer - et la
    derniere respect le reglage "fermer = cacher dans le tray". */
 .win-button {
-  width: var(--window-button-size, 24px);
-  height: var(--window-button-size, 24px);
+  position: relative;
+  width: var(--window-button-size, 15px);
+  height: var(--window-button-size, 15px);
   padding: 0;
   border: 1px solid var(--hairline);
   border-radius: var(--radius-pill);
@@ -247,10 +253,20 @@ html[data-glass='off'] #sidebar {
 }
 
 .win-button svg {
-  width: 11px;
-  height: 11px;
+  width: var(--window-glyph-size, 8px);
+  height: var(--window-glyph-size, 8px);
+  stroke-width: 1.6;
   opacity: 0;
   transition: opacity var(--duration) var(--ease);
+}
+
+/* Une pastille de 15 px ne se vise pas au pouce : la zone de clic deborde d'un
+   demi-pas de chaque cote. La cible fait donc 25 px sans que le dessin change, et
+   deux pastilles adjacentes se touchent sans jamais se chevaucher. */
+.win-button::after {
+  content: "";
+  position: absolute;
+  inset: calc(var(--window-button-gap, 10px) / -2);
 }
 
 .titlebar-controls:hover .win-button svg {
@@ -488,6 +504,15 @@ select.glass-field {
   color: var(--ok);
 }
 
+/* Une information, pas un verdict : le filet d'accent dit "a savoir", la couleur
+   du texte dit "rien ne va mal". Un dossier de telechargement qui n'existe pas
+   encore est exactement ce cas. */
+.glass-note.info {
+  color: var(--text-dim);
+  border-left: 2px solid var(--accent);
+  padding-left: var(--space-2);
+}
+
 /* ==========================================================================
    Pages hors service (accueil, favoris, reglages, aide)
    ========================================================================== */
@@ -530,7 +555,7 @@ select.glass-field {
 }
 
 /* Reglages : onglets a gauche, contenu a droite. Une colonne de rubrique est
-   plus lisible qu'un accordéon de sept sections quand on cherche "telechargements". */
+   plus lisible qu'un accordeon de sept sections quand on cherche "telechargements". */
 .settings-shell {
   display: grid;
   grid-template-columns: 168px minmax(0, 1fr);

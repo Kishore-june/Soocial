@@ -35,7 +35,7 @@ const catalogIcons = require('./catalog-icons');
 const i18n = require('./i18n');
 const { t } = i18n;
 
-const REPO_URL = 'https://github.com/Kishore-june/Soocial';
+const REPO_URL = 'https://github.com/MrJOYEN/soocial';
 const STORE_URL = 'ms-windows-store://pdp/?productid=9PBW3G2B60J6';
 
 // Build Microsoft Store : Electron leve ce drapeau quand le process tourne
@@ -2276,7 +2276,7 @@ function applyWindowControl(action) {
       mainWindow.setAlwaysOnTop(!mainWindow.isAlwaysOnTop());
       break;
     case 'menu':
-      showTitleBarMenu();
+      showNavMenu();
       break;
     default:
       log('window', `action inconnue ignoree : ${action}`);
@@ -2286,13 +2286,42 @@ function applyWindowControl(action) {
 }
 
 /**
- * Le menu de la barre de titre : le meme contenu que l'ancien menu applicatif,
- * en popup. Un popup n'occupe aucune hauteur de fenetre, ce qui est exactement la
- * raison pour laquelle il le remplace ici.
+ * Le menu appele par l'icone du logiciel, en haut de la barre laterale : les
+ * quatre pages en tete, puis les rubriques de l'application. Un seul menu, une
+ * seule entree - le bouton ≡ de la barre de titre ouvrait le meme contenu, en
+ * double. Le popup ne coute aucune hauteur de fenetre, c'est ce qui l'a fait
+ * preferer au menu applicatif.
  */
-function showTitleBarMenu() {
-  const menu = Menu.buildFromTemplate(appMenuTemplate());
-  menu.popup({ window: mainWindow });
+function navMenuTemplate() {
+  const shown = (accelerator) => ({ accelerator, registerAccelerator: false });
+  const current = store.get('lastPage') || null;
+  const pages = ['home', 'favorites', 'settings', 'help'].map((page) => ({
+    label: t(`nav.${page}`),
+    type: 'radio',
+    // Le point d'en face designe la page devant les vues natives. C'est le main
+    // qui la connait : le renderer ne fait que la dessiner.
+    checked: current === page,
+    click: () => openPage(page),
+    ...(page === 'settings' ? shown('Ctrl+,') : null),
+  }));
+  return [...pages, { type: 'separator' }, ...appMenuTemplate()];
+}
+
+/**
+ * @param {{x: number, y: number}} [rect] coin haut-gauche du bouton, en
+ *   coordonnees de contenu. Sans lui (Alt, ancien raccourci), le menu parait sous
+ *   le curseur.
+ */
+function showNavMenu(rect) {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  const menu = Menu.buildFromTemplate(navMenuTemplate());
+  const x = Number(rect && rect.x);
+  const y = Number(rect && rect.y);
+  if (Number.isFinite(x) && Number.isFinite(y)) {
+    menu.popup({ window: mainWindow, x: Math.round(x), y: Math.round(y) });
+  } else {
+    menu.popup({ window: mainWindow });
+  }
 }
 
 /** Contexte lu a chaque operation de stockage : les reglages sont editables a chaud. */
@@ -3380,7 +3409,14 @@ async function buildDiagnostics() {
     '',
     `data             ${storage.data}`,
     `cache            ${storage.cache}`,
-    `downloads        ${storage.downloads}${storage.downloadsIsDefault ? ' (default)' : ''} — ${storage.downloadsOk ? 'writable' : `NOT WRITABLE (${storage.downloadsErrorCode})`}`,
+    `downloads        ${storage.downloads}${storage.downloadsIsDefault ? ' (default)' : ''} — ${
+      // Trois etats, pas deux. Ecrire "writable" pour un dossier qui n'existe pas
+      // encore ferait croire que le diagnostic contredit la page Stockage, alors que
+      // c'est le dossier qui est absent et l'ecriture qui est possible.
+      storage.downloadsWillCreate ? 'to be created on first download'
+        : storage.downloadsOk ? 'writable'
+        : `NOT WRITABLE (${storage.downloadsErrorCode})`
+    }`,
     `first launch     ${store.get('firstLaunchAt') || 'unknown'}`,
     `channel          ${description.channel || 'stable'}`,
   ];
@@ -3522,6 +3558,7 @@ function closePage() {
 }
 
 ipcMain.on('hub:page', (_e, page) => openPage(typeof page === 'string' ? page : null));
+ipcMain.on('hub:nav-menu', (_e, rect) => showNavMenu(rect));
 ipcMain.handle('hub:check-updates', () => checkForUpdatesFromSettings());
 ipcMain.handle('hub:update-target', () => updateTargetCheck());
 ipcMain.on('hub:window-control', (_e, action) => applyWindowControl(String(action || '')));

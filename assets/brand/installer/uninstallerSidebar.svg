@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Barre laterale de la desinstallation. Meme gabarit que installerSidebar.svg,
+  deux ecarts assumes : la vignette perd sa couleur de marque (rien ne doit
+  laisser croire a une installation en cours) et le pied de page rappelle ou
+  restent les donnees, parce que c'est la seule question que l'on se pose a ce
+  moment-la.
+
+  Le chemin en pied de page est %APPDATA%\Soocial et non %APPDATA%\Nexus : les
+  donnees de l'app suivent le nom du produit, et l'installeur ne les supprime pas.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="164" height="314" viewBox="0 0 164 314">
+  <title>Soocial - barre laterale de desinstallation</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="314" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#171921"/>
+      <stop offset="0.55" stop-color="#101219"/>
+      <stop offset="1" stop-color="#0a0b10"/>
+    </linearGradient>
+    <clipPath id="card"><rect width="164" height="314"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#card)">
+    <rect width="164" height="314" fill="url(#bg)"/>
+
+    <g fill="#ffffff" fill-opacity="0.03">
+      <rect x="92" y="196" width="120" height="120" rx="30" transform="rotate(-16 152 256)"/>
+      <rect x="150" y="150" width="96" height="96" rx="26" transform="rotate(14 198 198)"/>
+    </g>
+
+    <rect x="20" y="26" width="64" height="64" rx="17" fill="#5a5f6e"/>
+    <svg x="26" y="32" width="52" height="52" viewBox="60 60 392 392">
+      <g fill="#ffffff">
+        <rect x="232" y="92" width="176" height="124" rx="52" fill-opacity="0.34"/>
+        <rect x="84" y="176" width="288" height="196" rx="72"/>
+        <path d="M158 352l-46 78q-7 13 7 9l86-24z"/>
+      </g>
+      <g fill="#5a5f6e">
+        <circle cx="158" cy="274" r="20"/>
+        <circle cx="228" cy="274" r="20"/>
+        <circle cx="298" cy="274" r="20"/>
+      </g>
+    </svg>
+
+    <text x="20" y="124" font-family="Archivo, 'Segoe UI', 'DejaVu Sans', sans-serif" font-size="26" font-weight="700" letter-spacing="-1" fill="#e9ecf5">Soocial</text>
+    <text x="20" y="146" font-family="'Segoe UI', 'DejaVu Sans', sans-serif" font-size="10.5" fill="#a9b0c6">Désinstallation.</text>
+    <text x="20" y="160" font-family="'Segoe UI', 'DejaVu Sans', sans-serif" font-size="10.5" fill="#a9b0c6">Les sessions restent sur</text>
+    <text x="20" y="174" font-family="'Segoe UI', 'DejaVu Sans', sans-serif" font-size="10.5" fill="#a9b0c6">le disque.</text>
+
+    <text x="20" y="296" font-family="'Segoe UI', 'DejaVu Sans', sans-serif" font-size="7" letter-spacing="1.1" fill="#767e95">%APPDATA%\SOOICIAL</text>
+  </g>
+</svg>

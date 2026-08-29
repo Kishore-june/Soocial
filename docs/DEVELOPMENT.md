@@ -16,7 +16,8 @@ catalog-icons.js   fetching and caching of catalogue logos
 images.js          image format sniffing and ICO/WebP helpers
 i18n.js            translations, loaded in the main process only
 locales/           en.json (reference), fr.json, es.json
-assets/            app icon used at runtime (brand sources in assets/brand)
+assets/            app icon used at runtime; assets/brand holds the SVG sources
+                   and the script that regenerates every derived raster
 installer/         electron-builder buildResources: exe icon, installer artwork,
                    custom.nsh (the install-location page and everything it guards)
 shared/            policy both processes read, never a copy of it:
@@ -29,7 +30,14 @@ shared/            policy both processes read, never a copy of it:
                    layout-metrics.js  sidebar/title-bar/split geometry, once
 main/              the installer's counterparts inside the app:
                    install-layout.js  reads install.json, checks the running path
-                   storage-layout.js  resolves data/cache roots before app.whenReady
+                   storage-layout.js  resolves data/cache roots before app.whenReady;
+                                      one folder has three states — writable, missing
+                                      but creatable, refused — and the middle one is
+                                      not an error. Path *shape* rules come from
+                                      shared/path-rules only on Windows, where they
+                                      are the product's contract; probing the disk the
+                                      way Linux expects is the same question, asked
+                                      with `path.isAbsolute`
                    downloads.js       the user-chosen download folder, with a write
                                       test and unique file names
                    migrate-legacy.js  moves an old Nexus profile to Soocial
@@ -228,7 +236,8 @@ source, which get their own key. Gmail and Google Chat both live on
 mail.google.com; a shared key made Gmail wear the Chat logo. The cache file
 carries a version number: bump it when fetching logic changes, or wrong
 entries survive for a month. Declared sources also cover services whose
-detectable icons are 32px, too soft for a 44px tile on a HiDPI screen.
+detectable icons are 32px: the tile is 30px wide, so a 32px source is already
+soft at 100% scale and blurred at 200%.
 
 Hard-earned lessons encoded in `images.js`:
 
@@ -239,6 +248,48 @@ Hard-earned lessons encoded in `images.js`:
   the dimensions are read from the RIFF header directly.
 - A `.ico` is a container with the same icon at many sizes. Keep the smallest
   frame that is large enough (128px), not the whole file.
+
+## The brand and its generated files
+
+`assets/brand/soocial-app-icon.svg` is the only drawing of the mark; everything
+else that Windows or NSIS consumes is generated from it and committed, so a
+build never needs ImageMagick or librsvg:
+
+| Generated file | Used by |
+| --- | --- |
+| `assets/icon.png`, `assets/icon.ico` | window icon, tray, notifications, `<img>` in the lock screen and onboarding |
+| `installer/icon.ico` | the `Soocial.exe` icon embedded by electron-builder |
+| `installer/appx/*.png` | Start Menu tiles, taskbar and Store listing |
+| `installer/installerSidebar.bmp`, `installer/uninstallerSidebar.bmp`, `installer/installerHeader.bmp` | NSIS wizard artwork |
+
+Sizes that need their own drawing are drawn, not downscaled:
+`soocial-icon-16.svg` and `soocial-icon-24.svg` keep the tile and the bubble
+only, because the three dots and the second bubble turn into mud under
+antialiasing at that size. `assets/brand/make-icons.sh` re-rasterises all of it
+(`rsvg-convert` for the gradients, then ImageMagick for the `.ico`, tiles and
+BMPs). Run it after touching a brand SVG, and check the frames before
+committing:
+
+```bash
+assets/brand/make-icons.sh
+identify assets/icon.ico          # 16, 24, 32, 48, 64, 128, 256 - en cet ordre
+```
+
+`installer/appx/README.md` records why each tile name is spelled exactly that
+way: electron-builder picks MSIX images by file name and silently skips a tile
+it cannot match.
+
+`docs/hero.png` and `docs/social-preview.png` are drawn from
+`assets/brand/docs-hero.svg` by the same script - deliberately not screenshots:
+a screenshot of the app depends on the network (the services show their sign-in
+page) and freezes a window state that the next release invalidates. The drawing
+carries the real measurements, so if the rail or the tiles change size, the
+README is wrong in a way someone will notice.
+
+The in-app mark is not one of these files: the sidebar button draws the same
+shapes inline (`renderer/index.html`) with theme tokens, so the icon follows
+light/dark instead of shipping a second image to keep in sync.
+
 
 ## i18n
 

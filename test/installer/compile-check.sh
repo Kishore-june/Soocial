@@ -46,6 +46,25 @@ workdir="${NSI_WORK:-$(mktemp -d)}"
 mkdir -p "$workdir"
 [[ -n "${NSI_WORK:-}" ]] || trap "rm -rf $workdir" EXIT
 
+# --- sonde de capacite : LogSet ----------------------------------------------
+# Un makensis construit sans NSIS_CONFIG_LOG rejette `LogSet on` d'une erreur
+# irrattrapable, et le harnais accuserait alors notre script pour un defaut du
+# paquet. On le sait en le compilant une fois, et on passe le define qui va bien.
+cat > "$workdir/logset-probe.nsi" <<'NSI'
+Unicode true
+OutFile "__WORK__/logset-probe.exe"
+Section
+  LogSet on
+SectionEnd
+NSI
+sed -i -e "s|__WORK__|$workdir|g" "$workdir/logset-probe.nsi"
+harness_defines=()
+if ! "$makensis" -V1 "$workdir/logset-probe.nsi" >"$workdir/logset-probe.log" 2>&1; then
+  echo "  note  : makensis sans NSIS_CONFIG_LOG (paquet systeme) - le hook LogSet est exclu de la compilation"
+  harness_defines+=(-DSOO_NO_LOGSET)
+fi
+rm -f "$workdir/logset-probe.exe"
+
 # --- harnais installeur ------------------------------------------------------
 # Reproduit l'ordre reel : en-tete genere (notre include), puis le modele.
 cat > "$workdir/installer.nsi" <<'NSI'
@@ -246,7 +265,7 @@ for target in installer uninstaller; do
   extra=()
   [[ "$target" == "uninstaller" ]] && extra=(-DBUILD_UNINSTALLER)
   rc=0
-  output=$("$makensis" -V3 "${defines[@]}" "${extra[@]}" "$workdir/$target.nsi" 2>&1) || rc=$?
+  output=$("$makensis" -V3 "${defines[@]}" "${harness_defines[@]+"${harness_defines[@]}"}" "${extra[@]}" "$workdir/$target.nsi" 2>&1) || rc=$?
   log="$workdir/$target.log"
   printf '%s\n' "$output" > "$log"
 

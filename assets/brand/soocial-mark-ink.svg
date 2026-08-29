@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Marque a l'encre : une seule couleur, les points de conversation creuses dans la
+  bulle par un masque (et non poses par-dessus), donc le fond reste visible a
+  travers. C'est la version qui doit etre utilisee pour l'impression, la
+  monochromie et tout fond clair.
+
+  La couleur est ecrite en dur (#1A202C) plutot qu'en currentColor : rsvg-convert
+  rasterise ces fichiers hors de toute feuille de style, ou currentColor vaudrait
+  noir par defaut et la variante claire serait illisible.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Soocial">
+  <title>Soocial - marque a l'encre</title>
+  <defs>
+    <mask id="holes" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#ffffff"/>
+      <g fill="#000000">
+        <circle cx="158" cy="274" r="20"/>
+        <circle cx="228" cy="274" r="20"/>
+        <circle cx="298" cy="274" r="20"/>
+      </g>
+    </mask>
+  </defs>
+  <g fill="#1A202C" mask="url(#holes)">
+    <rect x="84" y="176" width="288" height="196" rx="72"/>
+    <path d="M158 352l-46 78q-7 13 7 9l86-24z"/>
+  </g>
+</svg>

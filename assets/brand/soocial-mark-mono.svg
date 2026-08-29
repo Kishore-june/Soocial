@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Marque monocole blanche : la meme silhouette que soocial-mark-ink.svg, en encre
+  claire. Destinee aux fonds sombres (barre des taches, captures d'ecran,
+  bandeaux de documentation) ou une seule teinte est admise.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Soocial">
+  <title>Soocial - marque monocole blanche</title>
+  <defs>
+    <mask id="holes" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#ffffff"/>
+      <g fill="#000000">
+        <circle cx="158" cy="274" r="20"/>
+        <circle cx="228" cy="274" r="20"/>
+        <circle cx="298" cy="274" r="20"/>
+      </g>
+    </mask>
+  </defs>
+  <g fill="#ffffff" mask="url(#holes)">
+    <rect x="84" y="176" width="288" height="196" rx="72"/>
+    <path d="M158 352l-46 78q-7 13 7 9l86-24z"/>
+  </g>
+</svg>

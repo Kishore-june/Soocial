@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Le bloc marque sur fond sombre : vignette + nom + bascule. Utilise par les
+  ecrans de l'installeur NSIS (assets/brand/installer) et par la documentation.
+
+  Le nom est du texte, pas des paths : ces SVG ne quittent jamais le depot, ils ne
+  servent qu'a generer des rasters. La police demandee en premier est celle du
+  poste qui rasterise ; la liste se termine par sans-serif pour que le rendu
+  reste propre meme sans Archivo installe.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="100" viewBox="0 0 360 100" role="img" aria-label="Soocial">
+  <title>Soocial - bloc marque</title>
+  <g transform="translate(2 10) scale(0.8)">
+    <rect x="16" y="16" width="480" height="480" rx="116" fill="url(#tile)"/>
+    <rect x="18" y="18" width="476" height="476" rx="114" fill="none" stroke="#ffffff" stroke-opacity="0.26" stroke-width="5"/>
+    <rect x="232" y="92" width="176" height="124" rx="52" fill="#ffffff" fill-opacity="0.34"/>
+    <g fill="#ffffff">
+      <rect x="84" y="176" width="288" height="196" rx="72"/>
+      <path d="M158 352l-46 78q-7 13 7 9l86-24z"/>
+    </g>
+    <g fill="#2b3170">
+      <circle cx="158" cy="274" r="20"/>
+      <circle cx="228" cy="274" r="20"/>
+      <circle cx="298" cy="274" r="20"/>
+    </g>
+  </g>
+  <text x="104" y="47" font-family="Archivo, 'Segoe UI Variable Display', 'Segoe UI', 'DejaVu Sans', sans-serif" font-size="40" font-weight="620" letter-spacing="-1.4" fill="#E8EBF2">Soocial</text>
+  <text x="105" y="79" font-family="Archivo, 'Segoe UI', 'DejaVu Sans', sans-serif" font-size="17" letter-spacing="0.2" fill="#9aa0b5">Tous tes comptes. Une seule fenêtre.</text>
+  <defs>
+    <linearGradient id="tile" x1="96" y1="16" x2="416" y2="496" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7c5cff"/>
+      <stop offset="0.46" stop-color="#4a4fd0"/>
+      <stop offset="1" stop-color="#232a63"/>
+    </linearGradient>
+  </defs>
+</svg>
