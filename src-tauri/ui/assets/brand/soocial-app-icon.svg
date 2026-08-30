@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Soocial - la marque complete, telle qu'elle est gravee dans assets/icon.ico et
+  installer/icon.ico. Les formats bases (PNG, .ico, tuiles MSIX, bitmaps de
+  l'installeur) sont regeneres depuis ce fichier par make-icons.sh ; modifier
+  l'icone ici, jamais les formats derives.
+
+  Pourquoi ces formes : une bulle de conversation posee sur une vignette de verre.
+  La vignette dit "une seule fenetre", la grande bulle dit "le message", la petite
+  bulle en arriere dit "plusieurs comptes derriere". Le dessin volontairement
+  gros (la bulle occupe 60 % de la largeur) pour rester lisible a 16 px dans la
+  barre des taches.
+
+  Un seul repertoire de dessin : 512 x 512, marge de 16, rayons en multiples de 4.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Soocial">
+  <defs>
+    <!-- Le premier relais du degrade est le violet de l'interface (variable accent) :
+         l'icone et la fenetre doivent se ressembler. Le dernier reste assez
+         clair pour que la vignette ne disparaisse pas dans une barre des taches sombre. -->
+    <linearGradient id="tile" x1="96" y1="16" x2="416" y2="496" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7c5cff"/>
+      <stop offset="0.46" stop-color="#4a4fd0"/>
+      <stop offset="1" stop-color="#232a63"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="256" y1="16" x2="256" y2="212" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="tileClip">
+      <rect x="16" y="16" width="480" height="480" rx="116"/>
+    </clipPath>
+  </defs>
+
+  <!-- La vignette : carre arrondi, legevement eclairci en haut comme du verre. -->
+  <rect x="16" y="16" width="480" height="480" rx="116" fill="url(#tile)"/>
+  <g clip-path="url(#tileClip)">
+    <rect x="16" y="16" width="480" height="196" fill="url(#sheen)"/>
+  </g>
+  <rect x="18" y="18" width="476" height="476" rx="114" fill="none" stroke="#ffffff" stroke-opacity="0.26" stroke-width="5"/>
+
+  <!-- La seconde bulle, en retrait : le deuxieme compte, a demi voile. -->
+  <rect x="232" y="92" width="176" height="124" rx="52" fill="#ffffff" fill-opacity="0.34"/>
+
+  <!-- La bulle principale, pleine, avec sa queue ancree en bas a gauche. -->
+  <g fill="#ffffff">
+    <rect x="84" y="176" width="288" height="196" rx="72"/>
+    <path d="M158 352l-46 78q-7 13 7 9l86-24z"/>
+  </g>
+
+  <!-- Les trois points : la conversation en cours. -->
+  <g fill="#2b3170">
+    <circle cx="158" cy="274" r="20"/>
+    <circle cx="228" cy="274" r="20"/>
+    <circle cx="298" cy="274" r="20"/>
+  </g>
+</svg>

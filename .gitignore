@@ -11,3 +11,7 @@ Thumbs.db
 
 # Documents de travail internes, jamais publies
 docs/POSITIONING.md
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/

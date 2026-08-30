@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Entete des pages de l'installeur (150 x 57). Fonce sur clair : MUI dessine cet
+  bitmap sur le fond blanc de l'assistant, toute transparence se lirait donc en
+  blanc - d'ou le rectangle de fond pose a la main.
+
+  Le mot "Installation" n'est pas localise : c'est une signature, pas un message.
+  Les textes qui comptent (les etapes, les erreurs) sont dans custom.nsh et
+  suivent la langue choisie.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="150" height="57" viewBox="0 0 150 57">
+  <title>Soocial - entete de l'installeur</title>
+  <defs>
+    <linearGradient id="tile" x1="4" y1="13" x2="38" y2="47" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7c5cff"/>
+      <stop offset="0.5" stop-color="#4a4fd0"/>
+      <stop offset="1" stop-color="#28306e"/>
+    </linearGradient>
+  </defs>
+  <rect width="150" height="57" fill="#ffffff"/>
+  <rect x="4" y="13" width="34" height="34" rx="9" fill="url(#tile)"/>
+  <svg x="9" y="18" width="24" height="24" viewBox="80 120 360 320">
+    <rect x="232" y="140" width="150" height="96" rx="42" fill="#ffffff" fill-opacity="0.34"/>
+    <rect x="96" y="188" width="248" height="164" rx="62" fill="#ffffff"/>
+    <path d="M162 344l-40 66q-6 11 6 7l74-20z" fill="#ffffff"/>
+    <g fill="#3a3f8f">
+      <circle cx="166" cy="270" r="19"/>
+      <circle cx="222" cy="270" r="19"/>
+      <circle cx="278" cy="270" r="19"/>
+    </g>
+  </svg>
+  <text x="46" y="31" font-family="Archivo, 'Segoe UI', 'DejaVu Sans', sans-serif" font-size="17" font-weight="700" letter-spacing="-0.6" fill="#1a1f2e">Soocial</text>
+  <text x="47" y="45" font-family="'Segoe UI', 'DejaVu Sans', sans-serif" font-size="9" letter-spacing="0.2" fill="#8a90a4">Installation</text>
+</svg>

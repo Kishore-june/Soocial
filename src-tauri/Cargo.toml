@@ -1,0 +1,42 @@
+[package]
+name = "soocial"
+version = "1.0.0"
+description = "Soocial — one window for all your web apps, each account in its own isolated session."
+authors = ["Mehdi Joyen"]
+license = "MIT"
+edition = "2021"
+
+# Tauri v2 splits the desktop app into a cdylib + staticlib that is loaded by
+# the platform shell. The `unstable` feature is required for multi-webview
+# (Window::add_child), which is the Rust-side equivalent of Electron's
+# WebContentsView for hosting a service page inside the same window.
+[lib]
+name = "soocial_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["unstable"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+url = "2"
+
+dirs = "5"
+sys-locale = "0.3"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4"] }
+
+# Lock hashing. Electron used crypto.scryptSync(pin, salt, 32) with the default
+# N=16384, r=8, p=1. The Rust scrypt crate exposes the same parameters so users
+# can keep an existing config produced by the old app.
+scrypt = { version = "0.11", default-features = false }
+hex = "0.4"
+rand = "0.8"
+subtle = "2"
+
+thiserror = "1"

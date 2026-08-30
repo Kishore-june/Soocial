@@ -21,6 +21,10 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "sync:ui": "node scripts/sync-tauri-ui.mjs",
     "test": "node test/run.mjs",
     "test:ui": "node test/run-ui.mjs",
     "test:installer": "bash test/installer/compile-check.sh",
@@ -34,6 +38,8 @@
     "electron-updater": "^6.8.9"
   },
   "devDependencies": {
+    "@tauri-apps/api": "^2.8.0",
+    "@tauri-apps/cli": "^2.8.0",
     "electron": "^43.3.0",
     "electron-builder": "^26.15.3"
   },
