@@ -129,8 +129,7 @@ pub fn dnd_compute(choice: &str, now: i64) -> i64 {
             let mut candidate = now_dt
                 .date_naive()
                 .and_hms_opt(8, 0, 0)
-                .and_local_timezone(chrono::Local)
-                .earliest()
+                .and_then(|t| t.and_local_timezone(chrono::Local).earliest())
                 .unwrap_or(now_dt);
             if candidate.timestamp_millis() <= now {
                 candidate += Duration::days(1);

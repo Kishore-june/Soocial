@@ -60,7 +60,7 @@ fn broadcast_services(app: &AppHandle, state: &State<'_, AppState>) {
 }
 
 fn emit_active(app: &AppHandle, state: &State<'_, AppState>) {
-    let active = state.active_id.lock().ok().and_then(|value| value.clone()).flatten();
+    let active = state.active_id.lock().ok().and_then(|value| value.clone());
     let needs_code = active.as_deref().map(|id| needs_code(state, id)).unwrap_or(false);
     let _ = app.emit("hub:active", json!({ "id": active, "needsCode": needs_code }));
 }
@@ -182,7 +182,7 @@ fn random_salt() -> String {
 }
 
 #[tauri::command]
-pub async fn bootstrap(app: AppHandle, state: State<'_, AppState>) -> Value {
+pub async fn bootstrap(app: AppHandle, state: State<'_, AppState>) -> Result<Value, String> {
     let mut cfg = config(&state);
     {
         // Restore the last active service across launches. The webview itself
@@ -203,7 +203,7 @@ pub async fn bootstrap(app: AppHandle, state: State<'_, AppState>) -> Value {
                 .lock()
                 .ok()
                 .and_then(|value| value.clone())
-                .flatten();
+                ;
             if let Some(id) = id {
                 let _ = do_select(&app, &window, &state, &id);
             }
@@ -215,14 +215,14 @@ pub async fn bootstrap(app: AppHandle, state: State<'_, AppState>) -> Value {
         .iter()
         .map(|service| services::service_for_renderer(&cfg, service))
         .collect::<Vec<_>>();
-    let active_id = state.active_id.lock().ok().and_then(|value| value.clone()).flatten();
-    let split_id = state.split_id.lock().ok().and_then(|value| value.clone()).flatten();
+    let active_id = state.active_id.lock().ok().and_then(|value| value.clone());
+    let split_id = state.split_id.lock().ok().and_then(|value| value.clone());
     let locked = state.locked.lock().map(|value| *value).unwrap_or(false);
     let preference = cfg.language.clone();
     let language = crate::i18n::resolve(&preference);
     let onboarding = !cfg.onboarded && cfg.services.is_empty();
 
-    json!({
+    Ok(json!({
         "services": services_list,
         "activeId": active_id,
         "splitId": split_id,
@@ -260,7 +260,7 @@ pub async fn bootstrap(app: AppHandle, state: State<'_, AppState>) -> Value {
         "theme": cfg.theme,
         "productName": PRODUCT_NAME,
         "tagline": "Your accounts, one window, watertight sessions."
-    })
+    }))
 }
 
 fn do_select(
@@ -347,7 +347,7 @@ pub fn delete_service(app: AppHandle, state: State<'_, AppState>, id: String) ->
 }
 
 #[tauri::command]
-pub async fn onboard_complete(app: AppHandle, window: Window, state: State<'_, AppState>, drafts: Value) -> Value {
+pub async fn onboard_complete(app: AppHandle, window: Window, state: State<'_, AppState>, drafts: Value) -> Result<Value, String> {
     let mut cfg = config(&state);
     let result = services::onboard_complete(&mut cfg, &drafts);
     set_config(&state, cfg);
@@ -356,7 +356,7 @@ pub async fn onboard_complete(app: AppHandle, window: Window, state: State<'_, A
         let _ = do_select(&app, &window, &state, &service.id);
     }
     broadcast_services(&app, &state);
-    result
+    Ok(result)
 }
 
 #[tauri::command]
@@ -780,7 +780,7 @@ pub fn update_settings(app: AppHandle, state: State<'_, AppState>, patch: Value)
 }
 
 #[tauri::command]
-pub async fn pick_directory(state: State<'_, AppState>, purpose: String) -> Value {
+pub async fn pick_directory(state: State<'_, AppState>, purpose: String) -> Result<Value, String> {
     let path = state.app.dialog().file().blocking_pick_folder();
     match path {
         Some(file) => {
@@ -789,15 +789,14 @@ pub async fn pick_directory(state: State<'_, AppState>, purpose: String) -> Valu
                 let mut cfg = config(&state);
                 cfg.downloads = Some(path_str.clone());
                 set_config(&state, cfg);
-                json!({ "ok": true, "path": path_str, "settings": settings_snapshot(&state.app, &state) })
+                Ok(json!({ "ok": true, "path": path_str, "settings": settings_snapshot(&state.app, &state) }))
             } else {
-                json!({ "ok": true, "path": path_str })
+                Ok(json!({ "ok": true, "path": path_str }))
             }
         }
-        None => json!({ "ok": false, "canceled": true }),
+        None => Ok(json!({ "ok": false, "canceled": true })),
     }
 }
-
 #[tauri::command]
 pub fn verify_storage(state: State<'_, AppState>) -> Value {
     settings_snapshot(&state.app, &state)

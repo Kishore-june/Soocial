@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tauri::AppHandle;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -147,7 +147,7 @@ impl Config {
     /// unknown ids ignored, unplaced services appended.
     pub fn ordered_services(&self) -> Vec<Service> {
         let services = self.services();
-        let by_id: HashMap<String, Service> = services.iter().map(|s| (s.id.clone(), s)).collect();
+        let by_id: HashMap<String, Service> = services.iter().map(|s| (s.id.clone(), s.clone())).collect();
         let seen = std::collections::HashSet::new();
         let mut ordered = Vec::new();
         let mut seen = seen;

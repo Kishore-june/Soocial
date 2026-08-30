@@ -44,12 +44,9 @@ pub fn run() {
         })
         .setup(|app| {
             let config = config::load();
-            let state = AppState::new(app.handle(), config);
-            app.manage(state);
+            let state = AppState::new(app.handle().clone(), config);
 
-            // Restore the saved window geometry after the config is managed.
-            if let Some(window) = app.get_window("main") {
-                let state = app.state::<AppState>();
+            if let Some(window) = app.get_webview_window("main") {
                 if let Ok(cfg) = state.config.lock() {
                     if cfg.window.width > 0.0 && cfg.window.height > 0.0 {
                         let _ = window.set_size(tauri::LogicalSize::new(cfg.window.width, cfg.window.height));
@@ -63,6 +60,7 @@ pub fn run() {
                 }
             }
 
+            app.manage(state);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

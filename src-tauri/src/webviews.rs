@@ -107,8 +107,8 @@ pub fn layout_views(app: &tauri::AppHandle, state: &AppState, config: &Config) {
         let area_width = (width - sidebar).max(0.0);
         let area_height = (height - TITLEBAR_HEIGHT).max(0.0);
 
-        let split_id = state.split_id.lock().ok().and_then(|value| value.clone()).flatten();
-        let active_id = state.active_id.lock().ok().and_then(|value| value.clone()).flatten();
+        let split_id = state.split_id.lock().ok().and_then(|value| value.clone());
+        let active_id = state.active_id.lock().ok().and_then(|value| value.clone());
         let ratio = config.split_ratio.clamp(0.2, 0.8);
         let split_bottom = config.split_direction == "bottom";
         let split_active = split_id.is_some();
